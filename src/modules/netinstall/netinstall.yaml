@@ -236,6 +236,8 @@
     - kate
     - kdeconnect
     - kde-gtk-config
+    - kdegraphics-thumbnailers
+    - ffmpegthumbs
     - kinfocenter
     - kinit
     - kscreen

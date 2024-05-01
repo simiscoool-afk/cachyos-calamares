@@ -204,7 +204,7 @@
           - nano
           - vim
           - openssh
-- name: "KDE-Desktop - Deckify!"
+- name: "KDE-Desktop-Handhelds"
   description: "KDE-Plasma Desktop - Simple by default, powerful when needed. Deckified!"
   hidden: false
   selected: false

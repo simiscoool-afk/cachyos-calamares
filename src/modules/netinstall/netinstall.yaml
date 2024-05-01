@@ -203,6 +203,7 @@
           - micro
           - nano
           - vim
+          - code
           - openssh
 - name: "LTS Kernel"
   description: "Selection of additonal LTS Kernel, as backup"

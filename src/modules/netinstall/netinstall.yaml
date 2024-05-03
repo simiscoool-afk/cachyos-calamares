@@ -205,10 +205,10 @@
     - cachyos-nord-kde-theme-git
     - cachyos-iridescent-kde
     - cachyos-emerald-kde-theme-git
-    - cachyos-kde-settings
     - cachyos-themes-sddm
     - cachyos-wallpapers
     - cachyos-deckify
+    - maliit-keyboard
     - ark
     - bluedevil
     - breeze-gtk

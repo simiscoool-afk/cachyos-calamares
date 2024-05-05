@@ -208,6 +208,7 @@
     - cachyos-themes-sddm
     - cachyos-wallpapers
     - cachyos-deckify
+    - edid-decode-git
     - maliit-keyboard
     - ark
     - bluedevil

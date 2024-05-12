@@ -230,6 +230,8 @@
     - kwalletmanager
     - plasma-desktop
     - libplasma
+    - linux-cachyos-deckify
+    - linux-cachyos-deckify-headers
     - plasma-nm
     - plasma-pa
     - plasma-workspace

@@ -197,7 +197,7 @@
           - vim
           - openssh
 - name: "KDE-Desktop-Handhelds"
-  description: "KDE-Plasma Desktop - Simple by default, powerful when needed. Deckified!"
+  description: "KDE-Plasma Desktop - Simple by default, powerful when needed. Handheld Edition!"
   hidden: false
   selected: false
   critical: true
@@ -207,7 +207,7 @@
     - cachyos-emerald-kde-theme-git
     - cachyos-themes-sddm
     - cachyos-wallpapers
-    - cachyos-deckify
+    - cachyos-handheld
     - edid-decode-git
     - maliit-keyboard
     - ark

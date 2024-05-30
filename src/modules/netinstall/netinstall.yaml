@@ -10,8 +10,8 @@
      - cachyos-v3-mirrorlist
      - cachyos-v4-mirrorlist
      - cachyos-rate-mirrors
-     - linux-cachyos
-     - linux-cachyos-headers
+     - linux-cachyos-deckify
+     - linux-cachyos-deckify-headers
      - chwd
 - name: "CachyOS Packages"
   description: "needed CachyOS packages"
@@ -229,8 +229,6 @@
     - kwalletmanager
     - plasma-desktop
     - libplasma
-    - linux-cachyos-deckify
-    - linux-cachyos-deckify-headers
     - plasma-nm
     - plasma-pa
     - plasma-workspace

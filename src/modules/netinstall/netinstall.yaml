@@ -150,7 +150,6 @@
           - pipewire-pulse
           - wireplumber
           - pipewire-alsa
-          - pipewire-jack
           - rtkit
       - name: "hardware"
         description: "Hardware support libs and firmware"

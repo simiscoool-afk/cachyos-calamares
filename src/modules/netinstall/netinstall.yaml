@@ -447,7 +447,7 @@
   critical: true
   packages:
     - cachyos-hyprland-settings
-    - hyprland-git
+    - hyprland
     - kvantum
     - qt5ct
     - sddm

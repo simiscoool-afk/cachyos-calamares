@@ -62,6 +62,7 @@
           - nss-mdns
           - usb_modeswitch
           - wpa_supplicant
+          - wireless-regdb
           - xl2tpd
       - name: "bluetooth"
         description: "Bluetooth support"

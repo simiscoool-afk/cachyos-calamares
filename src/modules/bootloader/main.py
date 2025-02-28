@@ -15,6 +15,7 @@
 #   SPDX-FileCopyrightText: 2017 Gabriel Craciunescu <crazy@frugalware.org>
 #   SPDX-FileCopyrightText: 2017 Ben Green <Bezzy1999@hotmail.com>
 #   SPDX-FileCopyrightText: 2021 Neal Gompa <ngompa13@gmail.com>
+#   SPDX-FileCopyrightText: 2025 Vasiliy Stelmachenok <ventureo@cachyos.org>
 #   SPDX-License-Identifier: GPL-3.0-or-later
 #
 #   Calamares is Free Software: see the License-Identifier above.
@@ -248,10 +249,10 @@ def create_loader(loader_path, installation_root_path):
     :param loader_path: The absolute path to the loader.conf file
     :param installation_root_path: The path to the root of the target installation
     """
-    
+
     """
      Obsolete since default was changed to @saved from machine-id
-     
+
      get the machine-id
      with open(os.path.join(installation_root_path, "etc", "machine-id"), 'r') as machineid_file:
         machine_id = machineid_file.read().rstrip('\n')
@@ -679,6 +680,157 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
                                    boot_loader_install_path])
 
 
+def get_partition_drive(partition):
+    devname = partition.replace("/dev/", "")
+
+    with open(f"/sys/class/block/{devname}/partition", "r") as f:
+        partition_number = f.readline().strip()
+
+    parent_blockdev = os.path.dirname(os.readlink(f"/sys/class/block/{devname}"))
+    drive = f"/dev/{os.path.basename(parent_blockdev)}"
+    return drive, partition_number
+
+def add_additional_entries_limine(efi_directory, installation_root_path, fw_type):
+    """
+    :param efi_directory: The path to the efi directory relative to the root
+    :param installation_root_path: The path to the root of the installation
+    :param fw_type: Type of system installation
+    """
+    osproberOutput = libcalamares.globalstorage.value("osproberLines")
+
+    if not osproberOutput:
+        return
+
+    partitions = libcalamares.globalstorage.value("partitions")
+    config_path = os.path.join(installation_root_path + efi_directory, "limine.conf")
+    with open(config_path, 'a') as config_file:
+        config_file.write("/Other systems and bootloaders\n")
+        for line in osproberOutput:
+            (device, pretty_name, _, _) = line.split(":")
+
+            partition = device.split("@")
+
+            if fw_type == "efi" and len(partition) == 2:
+                (devname, efi_path) = partition
+                uuid = next(
+                    partition['partuuid'] for partition in partitions
+                    if partition['device'] == devname
+                )
+                config_file.write(f"//{pretty_name}\n")
+                config_file.write(f"\tprotocol: efi_chainload\n")
+                config_file.write(f"\timage_path: guid({uuid}):{efi_path}\n")
+            elif fw_type != "efi" and len(partition) == 1:
+                (devname,) = partition
+                drive, partition_number = get_partition_drive(devname)
+                config_file.write(f"//{pretty_name}\n")
+                config_file.write(f"\tprotocol: bios_chainload\n")
+                config_file.write(f"\tdrive: {drive}\n")
+                config_file.write(f"\tpartition: {partition_number}\n")
+
+def update_limine_config(efi_directory, installation_root_path):
+    """
+    :param efi_directory: The path to the efi directory relative to the root
+    :param installation_root_path: The path to the root of the installation
+    """
+    config_path = os.path.join(installation_root_path + efi_directory, "limine.conf")
+    uuid = get_uuid()
+    kernel_params = " ".join(get_kernel_params(uuid))
+
+    with open(config_path, 'w') as config_file:
+        config_file.write("timeout: 5\n\n")
+        for (kernel_path, _, _) in get_kernels(installation_root_path):
+            kernel_modules_dir = os.path.dirname(os.path.join(installation_root_path, kernel_path))
+            kernel_pkgbase = os.path.join(kernel_modules_dir, "pkgbase")
+
+            with open(kernel_pkgbase) as kernel_pkgbase_file:
+                kernel_name = kernel_pkgbase_file.readline().strip()
+
+            config_file.write(f"/CachyOS ({kernel_name})\n")
+            config_file.write(f"\tprotocol: linux\n")
+            config_file.write(f"\tkernel_path: boot():/vmlinuz-{kernel_name}\n")
+            config_file.write(f"\tcmdline: {kernel_params}\n")
+            config_file.write(f"\tmodule_path: boot():/initramfs-{kernel_name}.img\n\n")
+
+
+def install_limine(efi_directory, fw_type):
+    """
+    Installs limine as bootloader, either in pc or efi mode.
+
+    :param efi_directory:
+    :param fw_type:
+    """
+    # get the partition from global storage
+    partitions = libcalamares.globalstorage.value("partitions")
+    if not partitions:
+        libcalamares.utils.warning(_("Failed to install limine, no partitions defined in global storage"))
+        return
+
+    installation_root_path = libcalamares.globalstorage.value("rootMountPoint")
+    install_efi_directory = installation_root_path + efi_directory
+
+    if not os.path.isdir(install_efi_directory):
+        os.makedirs(install_efi_directory)
+
+    if fw_type == "efi":
+        libcalamares.utils.debug("Bootloader: limine (efi)")
+
+        # VFAT is weird, see issue CAL-385
+        install_efi_directory_firmware = (vfat_correct_case(
+            install_efi_directory,
+            "EFI"))
+        if not os.path.exists(install_efi_directory_firmware):
+            os.makedirs(install_efi_directory_firmware)
+
+        # there might be several values for the boot directory
+        # most usual they are boot, Boot, BOOT
+        install_efi_boot_directory = (vfat_correct_case(
+            install_efi_directory_firmware,
+            "boot"))
+        if not os.path.exists(install_efi_boot_directory):
+            os.makedirs(install_efi_boot_directory)
+
+        efi_file_source = installation_root_path + "/usr/share/limine/BOOTX64.EFI"
+        efi_file_destination = os.path.join(install_efi_boot_directory, "BOOTX64.EFI")
+        shutil.copy2(efi_file_source, efi_file_destination)
+
+        devname = next(
+            partition['device'] for partition in partitions
+            if partition["mountPoint"] == efi_directory
+        )
+        drive, partition_number = get_partition_drive(devname)
+
+        # Add limine boot entry via efibootmgr
+        subprocess.call([
+            libcalamares.job.configuration["efiBootMgr"],
+            "-c",
+            "-w",
+            "-L", efi_label(efi_directory),
+            "-d", drive,
+            "-p", partition_number,
+            "-l", "\\EFI\\BOOT\\BOOTX64.EFI"
+        ])
+
+        efi_boot_next()
+    else:
+        libcalamares.utils.debug("Bootloader: limine (bios)")
+
+        if libcalamares.globalstorage.value("bootLoader") is None:
+            return
+
+        boot_loader = libcalamares.globalstorage.value("bootLoader")
+
+        if boot_loader["installPath"] is None:
+            return
+
+        bios_sys_source = installation_root_path + "/usr/share/limine/limine-bios.sys"
+        shutil.copy2(bios_sys_source, install_efi_directory)
+        check_target_env_call(["limine", "bios-install", boot_loader["installPath"]])
+        update_limine_config(efi_directory, installation_root_path)
+
+    update_limine_config(efi_directory, installation_root_path)
+    add_additional_entries_limine(efi_directory, installation_root_path, fw_type)
+
+
 def install_grub(efi_directory, fw_type, install_hybrid_grub):
     """
     Installs grub as bootloader, either in pc or efi mode.
@@ -919,6 +1071,8 @@ def prepare_bootloader(fw_type, install_hybrid_grub):
         install_secureboot(efi_directory)
     elif efi_boot_loader == "refind" and fw_type == "efi":
         install_refind(efi_directory)
+    elif efi_boot_loader == "limine" or fw_type != "efi":
+        install_limine(efi_directory, fw_type)
     elif efi_boot_loader == "grub" or fw_type != "efi":
         install_grub(efi_directory, fw_type, install_hybrid_grub)
     else:

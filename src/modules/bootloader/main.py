@@ -689,7 +689,21 @@ def update_limine_config(efi_directory, installation_root_path):
     kernel_params = " ".join(get_kernel_params(uuid))
 
     with open(config_path, 'w') as config_file:
-        config_file.write("timeout: 5\n\n")
+        config_file.write("timeout: 5\n")
+
+        # Copy splash logo
+        try:
+            splash = libcalamares.job.configuration["limineSplashLogo"]
+            install_efi_directory = installation_root_path + efi_directory
+            splash_path = installation_root_path + splash
+            if os.path.exists(splash_path):
+                shutil.copy2(splash_path, install_efi_directory)
+                config_file.write(f"wallpaper: boot():/{os.path.basename(splash_path)}\n\n")
+            else:
+                libcalamares.utils.warning('Splash logo specified in limineSplashLogo not found!')
+        except KeyError:
+            libcalamares.utils.warning('limineSplashLogo not set. Skipping wallpaper in limine.conf')
+
         for (kernel_path, _, _) in get_kernels(installation_root_path):
             kernel_modules_dir = os.path.dirname(os.path.join(installation_root_path, kernel_path))
             kernel_pkgbase = os.path.join(kernel_modules_dir, "pkgbase")

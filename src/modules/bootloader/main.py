@@ -711,7 +711,8 @@ def update_limine_config(efi_directory, installation_root_path):
             with open(kernel_pkgbase) as kernel_pkgbase_file:
                 kernel_name = kernel_pkgbase_file.readline().strip()
 
-            config_file.write(f"/CachyOS ({kernel_name})\n")
+            config_file.write(f"/CachyOS\n")
+            config_file.write(f"//{kernel_name} kernel\n")
             config_file.write(f"\tprotocol: linux\n")
             config_file.write(f"\tkernel_path: boot():/vmlinuz-{kernel_name}\n")
             config_file.write(f"\tcmdline: {kernel_params}\n")

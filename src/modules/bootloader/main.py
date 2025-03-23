@@ -679,6 +679,43 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
                                    "--force",
                                    boot_loader_install_path])
 
+def add_efi_entries_limine(efi_directory, installation_root_path):
+    """
+    :param efi_directory: The path to the efi directory relative to the root
+    :param installation_root_path: The path to the root of the installation
+    """
+    efibootmgr_output = subprocess.check_output([
+        libcalamares.job.configuration["efiBootMgr"]
+    ]).decode('ascii')
+
+    partitions = libcalamares.globalstorage.value("partitions")
+    uuids = [
+        partition["partuuid"].lower() for partition in partitions
+        if partition['mountPoint'] != efi_directory
+    ]
+
+    entries = list(
+        filter(lambda entry: entry[1] in uuids,
+            re.findall(
+              # DO NOT TOUCH, I HOPE IT'S JUST WORKS
+              r'Boot.*\*\s+(.+)\tHD(?:.*,.*,(.+),.*,.*)/(.+\.[Ee][Ff][Ii])',
+              efibootmgr_output
+            )
+        )
+    )
+
+    if not entries:
+        return
+
+    config_path = os.path.join(installation_root_path + efi_directory, "limine.conf")
+    with open(config_path, 'a') as config_file:
+        config_file.write("/Other systems and bootloaders\n")
+        for entry in entries:
+            (name, uuid, efi_path) = entry
+            config_file.write(f"//{name}\n")
+            config_file.write(f"\tprotocol: efi_chainload\n")
+            config_file.write(f"\timage_path: guid({uuid}):{efi_path.replace("\\", "/")}\n")
+
 def update_limine_config(efi_directory, installation_root_path):
     """
     :param efi_directory: The path to the efi directory relative to the root
@@ -775,13 +812,15 @@ def install_limine(efi_directory, fw_type):
             libcalamares.job.configuration["efiBootMgr"],
             "-c",
             "-w",
-            "-L", "limine",
+            "-L", efi_label(efi_directory),
             "-d", f"/dev/{os.path.basename(parent_blockdev)}",
             "-p", efi_partition_number,
             "-l", "\\EFI\\BOOT\\BOOTX64.EFI"
         ])
 
         efi_boot_next()
+        update_limine_config(efi_directory, installation_root_path)
+        add_efi_entries_limine(efi_directory, installation_root_path)
     else:
         libcalamares.utils.debug("Bootloader: limine (bios)")
 
@@ -796,8 +835,8 @@ def install_limine(efi_directory, fw_type):
         bios_sys_source = installation_root_path + "/usr/share/limine/limine-bios.sys"
         shutil.copy2(bios_sys_source, install_efi_directory)
         check_target_env_call(["limine", "bios-install", boot_loader["installPath"]])
+        update_limine_config(efi_directory, installation_root_path)
 
-    update_limine_config(efi_directory, installation_root_path)
 
 
 def install_grub(efi_directory, fw_type, install_hybrid_grub):

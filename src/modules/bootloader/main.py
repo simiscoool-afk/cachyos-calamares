@@ -679,42 +679,53 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
                                    "--force",
                                    boot_loader_install_path])
 
-def add_efi_entries_limine(efi_directory, installation_root_path):
+
+def get_partition_drive(partition):
+    devname = partition.replace("/dev/", "")
+
+    with open(f"/sys/class/block/{devname}/partition", "r") as f:
+        partition_number = f.readline().strip()
+
+    parent_blockdev = os.path.dirname(os.readlink(f"/sys/class/block/{devname}"))
+    drive = f"/dev/{os.path.basename(parent_blockdev)}"
+    return drive, partition_number
+
+def add_additional_entries_limine(efi_directory, installation_root_path, fw_type):
     """
     :param efi_directory: The path to the efi directory relative to the root
     :param installation_root_path: The path to the root of the installation
+    :param fw_type: Type of system installation
     """
-    efibootmgr_output = subprocess.check_output([
-        libcalamares.job.configuration["efiBootMgr"]
-    ]).decode('ascii')
+    osproberOutput = libcalamares.globalstorage.value("osproberLines")
 
-    partitions = libcalamares.globalstorage.value("partitions")
-    uuids = [
-        partition["partuuid"].lower() for partition in partitions
-        if partition['mountPoint'] != efi_directory
-    ]
-
-    entries = list(
-        filter(lambda entry: entry[1] in uuids,
-            re.findall(
-              # DO NOT TOUCH, I HOPE IT'S JUST WORKS
-              r'Boot.*\*\s+(.+)\tHD(?:.*,.*,(.+),.*,.*)/(.+\.[Ee][Ff][Ii])',
-              efibootmgr_output
-            )
-        )
-    )
-
-    if not entries:
+    if not osproberOutput:
         return
 
+    partitions = libcalamares.globalstorage.value("partitions")
     config_path = os.path.join(installation_root_path + efi_directory, "limine.conf")
     with open(config_path, 'a') as config_file:
         config_file.write("/Other systems and bootloaders\n")
-        for entry in entries:
-            (name, uuid, efi_path) = entry
-            config_file.write(f"//{name}\n")
-            config_file.write(f"\tprotocol: efi_chainload\n")
-            config_file.write(f"\timage_path: guid({uuid}):{efi_path.replace("\\", "/")}\n")
+        for line in osproberOutput:
+            (device, pretty_name, _, _) = line.split(":")
+
+            partition = device.split("@")
+
+            if fw_type == "efi" and len(partition) == 2:
+                (devname, efi_path) = partition
+                uuid = next(
+                    partition['partuuid'] for partition in partitions
+                    if partition['device'] == devname
+                )
+                config_file.write(f"//{pretty_name}\n")
+                config_file.write(f"\tprotocol: efi_chainload\n")
+                config_file.write(f"\timage_path: guid({uuid}):{efi_path}\n")
+            elif fw_type != "efi" and len(partition) == 1:
+                (devname,) = partition
+                drive, partition_number = get_partition_drive(devname)
+                config_file.write(f"//{pretty_name}\n")
+                config_file.write(f"\tprotocol: bios_chainload\n")
+                config_file.write(f"\tdrive: {drive}\n")
+                config_file.write(f"\tpartition: {partition_number}\n")
 
 def update_limine_config(efi_directory, installation_root_path):
     """
@@ -797,19 +808,11 @@ def install_limine(efi_directory, fw_type):
         efi_file_destination = os.path.join(install_efi_boot_directory, "BOOTX64.EFI")
         shutil.copy2(efi_file_source, efi_file_destination)
 
-        # Get efi_partition_number with major and minor of device
-        major = int(os.stat(install_efi_directory).st_dev >> 8)
-        minor = int(os.stat(install_efi_directory).st_dev & 0xff)
-
-        with open(f"/sys/dev/block/{major}:{minor}/partition", "r") as f:
-            efi_partition_number = f.readline().strip()
-
-        devblock = next(
+        devname = next(
             partition['device'] for partition in partitions
             if partition["mountPoint"] == efi_directory
         )
-        devname = os.path.basename(devblock)
-        parent_blockdev = os.path.dirname(os.readlink(f"/sys/class/block/{devname}"))
+        drive, partition_number = get_partition_drive(devname)
 
         # Add limine boot entry via efibootmgr
         subprocess.call([
@@ -817,14 +820,12 @@ def install_limine(efi_directory, fw_type):
             "-c",
             "-w",
             "-L", efi_label(efi_directory),
-            "-d", f"/dev/{os.path.basename(parent_blockdev)}",
-            "-p", efi_partition_number,
+            "-d", drive,
+            "-p", partition_number,
             "-l", "\\EFI\\BOOT\\BOOTX64.EFI"
         ])
 
         efi_boot_next()
-        update_limine_config(efi_directory, installation_root_path)
-        add_efi_entries_limine(efi_directory, installation_root_path)
     else:
         libcalamares.utils.debug("Bootloader: limine (bios)")
 
@@ -841,6 +842,8 @@ def install_limine(efi_directory, fw_type):
         check_target_env_call(["limine", "bios-install", boot_loader["installPath"]])
         update_limine_config(efi_directory, installation_root_path)
 
+    update_limine_config(efi_directory, installation_root_path)
+    add_additional_entries_limine(efi_directory, installation_root_path, fw_type)
 
 
 def install_grub(efi_directory, fw_type, install_hybrid_grub):

@@ -797,14 +797,18 @@ def install_limine(efi_directory, fw_type):
         efi_file_destination = os.path.join(install_efi_boot_directory, "BOOTX64.EFI")
         shutil.copy2(efi_file_source, efi_file_destination)
 
-        (blockdev, maj_min) = subprocess.check_output([
-            "findmnt", "-n", '-v', "-k", "-o", "SOURCE,MAJ:MIN", install_efi_directory
-        ]).decode('ascii').split()
+        # Get efi_partition_number with major and minor of device
+        major = int(os.stat(install_efi_directory).st_dev >> 8)
+        minor = int(os.stat(install_efi_directory).st_dev & 0xff)
 
-        with open(f"/sys/dev/block/{maj_min}/partition", "r") as f:
+        with open(f"/sys/dev/block/{major}:{minor}/partition", "r") as f:
             efi_partition_number = f.readline().strip()
 
-        devname = os.path.basename(blockdev)
+        devblock = next(
+            partition['device'] for partition in partitions
+            if partition["mountPoint"] == efi_directory
+        )
+        devname = os.path.basename(devblock)
         parent_blockdev = os.path.dirname(os.readlink(f"/sys/class/block/{devname}"))
 
         # Add limine boot entry via efibootmgr

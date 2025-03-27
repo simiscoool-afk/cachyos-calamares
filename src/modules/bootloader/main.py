@@ -248,10 +248,10 @@ def create_loader(loader_path, installation_root_path):
     :param loader_path: The absolute path to the loader.conf file
     :param installation_root_path: The path to the root of the target installation
     """
-    
+
     """
      Obsolete since default was changed to @saved from machine-id
-     
+
      get the machine-id
      with open(os.path.join(installation_root_path, "etc", "machine-id"), 'r') as machineid_file:
         machine_id = machineid_file.read().rstrip('\n')
@@ -545,9 +545,9 @@ def install_systemd_boot(efi_directory):
     loader_path = os.path.join(install_efi_directory,
                                "loader",
                                "loader.conf")
-    subprocess.call(["bootctl",
+    subprocess.check_call(["bootctl",
                      "--path={!s}".format(install_efi_directory),
-                     "install"])
+                     "install"], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
     for (kernel, kernel_type, kernel_version) in get_kernels(installation_root_path):
         create_systemd_boot_conf(installation_root_path,

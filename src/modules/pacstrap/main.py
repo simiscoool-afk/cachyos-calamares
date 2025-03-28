@@ -72,6 +72,7 @@ def run():
 
     """
     root_mount_point = libcalamares.globalstorage.value("rootMountPoint")
+    fw_type = libcalamares.globalstorage.value("firmwareType")
 
     if not root_mount_point:
         return ("No mount point for root partition in globalstorage",
@@ -106,6 +107,10 @@ def run():
     elif is_root_on_bcachefs:
         libcalamares.utils.debug("Root on BCACHEFS")
         base_packages += ["bcachefs-tools"]
+
+    # limine-entry-tool is made for only EFI installations
+    if fw_type == "efi":
+        base_packages += ["limine-entry-tool"]
 
     # run the pacstrap
     pacstrap_command = ["/etc/calamares/scripts/pacstrap_calamares", "-c", root_mount_point] + base_packages

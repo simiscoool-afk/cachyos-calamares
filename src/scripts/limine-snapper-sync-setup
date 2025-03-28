@@ -3,8 +3,6 @@ config="/etc/limine-snapper-sync.conf"
 
 if [ -e "$config" ]; then
   sed -i 's/TARGET_OS_NAME=".*"/TARGET_OS_NAME="CachyOS"/' "$config"
-  sed -i 's/COMMANDS_BEFORE_SAVE/#COMMANDS_BEFORE_SAVE/' "$config"
-  sed -i 's/COMMANDS_AFTER_SAVE/#COMMANDS_AFTER_SAVE/' "$config"
 
   # It's NOT right, but we have no choice because the snapper setup doesn't
   # work correctly at pacstrap step.

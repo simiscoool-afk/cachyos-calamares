@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 limine_snapper_config="/etc/limine-snapper-sync.conf"
-limine_entry_tool_config="/etc/default/limine"
+limine_entry_tool_config="/etc/limine-entry-tool.conf"
 
 if [ -e "$limine_snapper_config" ]; then
   sed -i 's/TARGET_OS_NAME=".*"/TARGET_OS_NAME="CachyOS"/' "$limine_snapper_config"

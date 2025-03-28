@@ -660,7 +660,7 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
             boot_loader_install_path = boot_loader["installPath"]
             if boot_loader_install_path is None:
                 return
-            
+
         # boot_loader_install_path points to the physical disk to install GRUB
         # to. It should start with "/dev/", and be at least as long as the
         # string "/dev/sda".

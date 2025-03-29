@@ -171,6 +171,7 @@ def get_kernel_params(uuid):
             cryptdevice_params.append(f"root=/dev/mapper/{partition['luksMapperName']}")
 
     # btrfs and zfs handling
+    is_zfs = False
     for partition in partitions:
         # If a btrfs root subvolume wasn't set, it means the root is directly on the partition
         # and this option isn't needed
@@ -183,6 +184,7 @@ def get_kernel_params(uuid):
         if is_zfs_root(partition):
             zfs_root_path = get_zfs_root()
             if zfs_root_path is not None:
+                is_zfs = True
                 kernel_params.append("root=ZFS=" + zfs_root_path)
             else:
                 # Something is really broken if we get to this point
@@ -192,7 +194,8 @@ def get_kernel_params(uuid):
     if cryptdevice_params:
         kernel_params.extend(cryptdevice_params)
     else:
-        kernel_params.append("root=UUID={!s}".format(uuid))
+        if not is_zfs:
+            kernel_params.append("root=UUID={!s}".format(uuid))
 
     if swap_uuid:
         kernel_params.append("resume=UUID={!s}".format(swap_uuid))

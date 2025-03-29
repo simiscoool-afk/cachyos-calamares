@@ -89,7 +89,7 @@ doAutopartition( PartitionCoreModule* core, Device* dev, Choices::AutoPartitionO
     Calamares::GlobalStorage* gs = Calamares::JobQueue::instance()->globalStorage();
 
     const bool isEfi = PartUtils::isEfiSystem();
-    
+
     bool createHybridBootloaderLayout = false;
     if ( gs->contains( "createHybridBootloaderLayout" ) ) {
         createHybridBootloaderLayout = gs->value( "createHybridBootloaderLayout" ).toBool();
@@ -123,7 +123,7 @@ doAutopartition( PartitionCoreModule* core, Device* dev, Choices::AutoPartitionO
 
     core->createPartitionTable( dev, partType );
 
-    if ( createHybridBootloaderLayout || isEfi )
+    if (true)
     {
         qint64 uefisys_part_sizeB = PartUtils::efiFilesystemRecommendedSize();
         qint64 efiSectorCount = Calamares::bytesToSectors( uefisys_part_sizeB, dev->logicalSize() );

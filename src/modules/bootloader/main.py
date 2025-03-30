@@ -250,10 +250,10 @@ def create_loader(loader_path, installation_root_path):
     :param loader_path: The absolute path to the loader.conf file
     :param installation_root_path: The path to the root of the target installation
     """
-    
+
     """
      Obsolete since default was changed to @saved from machine-id
-     
+
      get the machine-id
      with open(os.path.join(installation_root_path, "etc", "machine-id"), 'r') as machineid_file:
         machine_id = machineid_file.read().rstrip('\n')
@@ -661,7 +661,7 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
             boot_loader_install_path = boot_loader["installPath"]
             if boot_loader_install_path is None:
                 return
-            
+
         # boot_loader_install_path points to the physical disk to install GRUB
         # to. It should start with "/dev/", and be at least as long as the
         # string "/dev/sda".
@@ -850,25 +850,18 @@ def install_refind(efi_directory):
         installation_root_path = libcalamares.globalstorage.value("rootMountPoint")
     except KeyError:
         libcalamares.utils.warning('Global storage value "rootMountPoint" missing')
+        return
 
-    install_efi_directory = installation_root_path + efi_directory
     uuid = get_uuid()
     kernel_params = " ".join(get_kernel_params(uuid))
-    conf_path = os.path.join(installation_root_path, "boot/refind_linux.conf")
+    conf_path = os.path.join(installation_root_path + "boot", "refind_linux.conf")
+
+    with open(conf_path, "w") as refind_file:
+        refind_file.write(f'"Boot with standard params"  "{kernel_params}"\n')
+        refind_file.write(f'"Boot to single-user mode"   "{kernel_params} single"\n')
+        refind_file.write(f'"Boot with minimal options"  "ro root=UUID={uuid}"\n')
 
     check_target_env_call(["refind-install"])
-
-    with open(conf_path, "r") as refind_file:
-        filedata = [x.strip() for x in refind_file.readlines()]
-
-    with open(conf_path, 'w') as refind_file:
-        for line in filedata:
-            if line.startswith('"Boot with standard options"'):
-                line = f'"Boot with standard options"    "{kernel_params}"'
-            elif line.startswith('"Boot to single-user mode"'):
-                line = f'"Boot to single-user mode"    "{kernel_params}" single'
-            refind_file.write(line + "\n")
-
     update_refind_config(efi_directory, installation_root_path)
 
 

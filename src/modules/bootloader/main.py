@@ -741,6 +741,7 @@ def update_limine_config(efi_directory, installation_root_path):
 
     with open(config_path, 'w') as config_file:
         config_file.write("timeout: 5\n")
+        config_file.write("default_entry: 2\n")
 
         # Copy splash logo
         try:
@@ -762,7 +763,7 @@ def update_limine_config(efi_directory, installation_root_path):
             with open(kernel_pkgbase) as kernel_pkgbase_file:
                 kernel_name = kernel_pkgbase_file.readline().strip()
 
-            config_file.write(f"/CachyOS\n")
+            config_file.write(f"/+CachyOS\n")
             config_file.write(f"//{kernel_name} kernel\n")
             config_file.write(f"\tprotocol: linux\n")
             config_file.write(f"\tkernel_path: boot():/vmlinuz-{kernel_name}\n")

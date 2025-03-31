@@ -707,7 +707,7 @@ def add_additional_entries_limine(efi_directory, installation_root_path, fw_type
     partitions = libcalamares.globalstorage.value("partitions")
     config_path = os.path.join(installation_root_path + efi_directory, "limine.conf")
     with open(config_path, 'a') as config_file:
-        config_file.write("/Other systems and bootloaders\n")
+        config_file.write("/+Other systems and bootloaders\n")
         for line in osproberOutput:
             (device, pretty_name, _, _) = line.split(":")
 

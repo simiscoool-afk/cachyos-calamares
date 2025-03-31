@@ -707,7 +707,7 @@ def add_additional_entries_limine(efi_directory, installation_root_path, fw_type
     partitions = libcalamares.globalstorage.value("partitions")
     config_path = os.path.join(installation_root_path + efi_directory, "limine.conf")
     with open(config_path, 'a') as config_file:
-        config_file.write("/Other systems and bootloaders\n")
+        config_file.write("/+Other systems and bootloaders\n")
         for line in osproberOutput:
             (device, pretty_name, _, _) = line.split(":")
 
@@ -741,6 +741,7 @@ def update_limine_config(efi_directory, installation_root_path):
 
     with open(config_path, 'w') as config_file:
         config_file.write("timeout: 5\n")
+        config_file.write("default_entry: 2\n")
 
         # Copy splash logo
         try:
@@ -762,8 +763,8 @@ def update_limine_config(efi_directory, installation_root_path):
             with open(kernel_pkgbase) as kernel_pkgbase_file:
                 kernel_name = kernel_pkgbase_file.readline().strip()
 
-            config_file.write(f"/CachyOS\n")
-            config_file.write(f"//{kernel_name} kernel\n")
+            config_file.write(f"/+CachyOS\n")
+            config_file.write(f"//{kernel_name}\n")
             config_file.write(f"\tprotocol: linux\n")
             config_file.write(f"\tkernel_path: boot():/vmlinuz-{kernel_name}\n")
             config_file.write(f"\tcmdline: {kernel_params}\n")

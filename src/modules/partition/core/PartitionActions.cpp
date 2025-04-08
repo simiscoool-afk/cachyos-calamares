@@ -150,7 +150,7 @@ doAutopartition( PartitionCoreModule* core, Device* dev, Choices::AutoPartitionO
         core->createPartition( dev, efiPartition, KPM_PARTITION_FLAG_ESP );
         firstFreeSector = lastSector + 1;
 
-        if ( createHybridBootloaderLayout )
+        if ( createHybridBootloaderLayout || !isEfi)
         {
             qint64 bios_part_sizeB = 8_MiB;
             qint64 biosSectorCount = Calamares::bytesToSectors( bios_part_sizeB, dev->logicalSize() );

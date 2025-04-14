@@ -110,7 +110,7 @@ def run():
 
     # limine-entry-tool is made for only EFI installations
     if fw_type == "efi":
-        base_packages += ["limine-entry-tool"]
+        base_packages += ["limine-entry-tool", "limine-mkinitcpio-hook"]
 
     # run the pacstrap
     pacstrap_command = ["/etc/calamares/scripts/pacstrap_calamares", "-c", root_mount_point] + base_packages

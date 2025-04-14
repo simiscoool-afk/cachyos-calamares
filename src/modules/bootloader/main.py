@@ -741,7 +741,7 @@ def update_limine_config(efi_directory, installation_root_path):
 
     with open(config_path, 'w') as config_file:
         config_file.write("timeout: 5\n")
-        config_file.write("default_entry: 2\n")
+        config_file.write("default_entry: 2\n\n")
 
         # Copy splash logo
         try:
@@ -750,6 +750,18 @@ def update_limine_config(efi_directory, installation_root_path):
             splash_path = installation_root_path + splash
             if os.path.exists(splash_path):
                 shutil.copy2(splash_path, install_efi_directory)
+
+                # TODO (ventureo): This should be properly packaged when
+                # limine starts supporting drop-in configuration files.
+                config_file.write("# CachyOS Limine theme\n")
+                config_file.write("# Author: diegons490 (https://github.com/diegons490/cachyos-limine-theme)\n")
+                config_file.write("term_palette: 1e1e2e;f38ba8;a6e3a1;f9e2af;89b4fa;f5c2e7;94e2d5;cdd6f4\n")
+                config_file.write("term_palette_bright: 585b70;f38ba8;a6e3a1;f9e2af;89b4fa;f5c2e7;94e2d5;cdd6f4\n")
+                config_file.write("term_background: ffffffff\n")
+                config_file.write("term_foreground: cdd6f4\n")
+                config_file.write("term_background_bright: ffffffff\n")
+                config_file.write("term_foreground_bright: cdd6f4\n")
+                config_file.write("interface_branding:\n")
                 config_file.write(f"wallpaper: boot():/{os.path.basename(splash_path)}\n\n")
             else:
                 libcalamares.utils.warning('Splash logo specified in limineSplashLogo not found!')

@@ -9,9 +9,11 @@ if [ -e "$limine_snapper_config" ]; then
   # work correctly at pacstrap step.
   pacman -S --noconfirm cachyos-snapper-support
   systemctl enable limine-snapper-watcher.service &>/dev/null
+  systemctl enable limine-snapper-sync.service &>/dev/null
 fi
 
 if [ -e "$limine_entry_tool_config" ]; then
     sed -i 's/REGISTER_LIMINE_EFI=yes/REGISTER_LIMINE_EFI=no/' "$limine_entry_tool_config"
     sed -i 's/FIND_BOOTLOADERS=yes/FIND_BOOTLOADERS=no/' "$limine_entry_tool_config"
+    limine-mkinitcpio
 fi

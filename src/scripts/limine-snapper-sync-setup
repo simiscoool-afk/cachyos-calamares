@@ -8,7 +8,6 @@ if [ -e "$limine_snapper_config" ]; then
   # It's NOT right, but we have no choice because the snapper setup doesn't
   # work correctly at pacstrap step.
   pacman -S --noconfirm cachyos-snapper-support
-  systemctl enable limine-snapper-watcher.service &>/dev/null
   systemctl enable limine-snapper-sync.service &>/dev/null
 fi
 

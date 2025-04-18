@@ -737,6 +737,7 @@ def update_limine_config(efi_directory, installation_root_path, fw_type):
     :param fw_type: A string which is "efi" for UEFI installs.  Any other value results in a BIOS install
     """
     config_path = os.path.join(installation_root_path + efi_directory, "limine.conf")
+    limine_entry_config_path = os.path.join(installation_root_path + "/etc/default", "limine")
     uuid = get_uuid()
     kernel_params = " ".join(get_kernel_params(uuid))
 
@@ -772,20 +773,11 @@ def update_limine_config(efi_directory, installation_root_path, fw_type):
         except KeyError:
             libcalamares.utils.warning('limineSplashLogo not set. Skipping wallpaper in limine.conf')
 
-        for (kernel_path, _, _) in get_kernels(installation_root_path):
-            kernel_modules_dir = os.path.dirname(os.path.join(installation_root_path, kernel_path))
-            kernel_pkgbase = os.path.join(kernel_modules_dir, "pkgbase")
+        config_file.write(f"/+CachyOS\n")
 
-            with open(kernel_pkgbase) as kernel_pkgbase_file:
-                kernel_name = kernel_pkgbase_file.readline().strip()
-
-            config_file.write(f"/+CachyOS\n")
-            config_file.write(f"//{kernel_name}\n")
-            config_file.write(f"\tprotocol: linux\n")
-            config_file.write(f"\tkernel_path: boot():/vmlinuz-{kernel_name}\n")
-            config_file.write(f"\tcmdline: {kernel_params}\n")
-            config_file.write(f"\tmodule_path: boot():/initramfs-{kernel_name}.img\n\n")
-
+    with open(limine_entry_config_path, 'w') as limine_entry_config:
+        limine_entry_config.write(f'ESP_PATH="{efi_directory}"\n')
+        limine_entry_config.write(f'KERNEL_CMDLINE[default]="{kernel_params}"\n')
 
 def install_limine(efi_directory, fw_type):
     """

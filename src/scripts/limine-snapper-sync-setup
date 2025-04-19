@@ -3,14 +3,15 @@ limine_snapper_config="/etc/limine-snapper-sync.conf"
 limine_entry_tool_config="/etc/limine-entry-tool.conf"
 
 if [ -e "$limine_snapper_config" ]; then
-  sed -i 's/TARGET_OS_NAME=".*"/TARGET_OS_NAME="CachyOS"/' "$limine_snapper_config"
+    sed -i 's/TARGET_OS_NAME=".*"/TARGET_OS_NAME="CachyOS"/' "$limine_snapper_config"
 
-  # It's NOT right, but we have no choice because the snapper setup doesn't
-  # work correctly at pacstrap step.
-  pacman -S --noconfirm cachyos-snapper-support
-  systemctl enable limine-snapper-sync.service &>/dev/null
+    # It's NOT right, but we have no choice because the snapper setup doesn't
+    # work correctly at pacstrap step.
+    pacman -S --noconfirm cachyos-snapper-support
+    systemctl enable limine-snapper-sync.service &>/dev/null
 fi
 
+pacman -S --noconfirm limine-mkinitcpio-hook
 if [ -e "$limine_entry_tool_config" ]; then
     sed -i 's/REGISTER_LIMINE_EFI=yes/REGISTER_LIMINE_EFI=no/' "$limine_entry_tool_config"
     sed -i 's/FIND_BOOTLOADERS=yes/FIND_BOOTLOADERS=no/' "$limine_entry_tool_config"

@@ -415,6 +415,7 @@
     - cosmic-text-editor
     - cosmic-wallpapers
     - cosmic-workspaces
+    - notification-daemon
     - sddm
     - xdg-desktop-portal-cosmic
     - xorg-xwayland

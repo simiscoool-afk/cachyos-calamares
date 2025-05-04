@@ -8,7 +8,7 @@ pacman_conf_path_backup="${pacman_conf}.bak"
 # Architecture Check
 check_v3="$(/lib/ld-linux-x86-64.so.2 --help | grep 'x86-64-v3 (' | awk '{print $1}')"
 check_v4="$(/lib/ld-linux-x86-64.so.2 --help | grep 'x86-64-v4 (' | awk '{print $1}')"
-check_znver4_znver5="$(gcc -march=native -Q --help=target 2>&1 | head -n 35 | grep -E '(znver4|znver5)')"
+check_znver4_znver5="$(gcc -march=native -Q --help=target 2>&1 | head -n 37 | grep -E '(znver4|znver5)')"
 
 if [ -n "$check_znver4_znver5" ]; then
   echo "znver4 or znver5 is supported"

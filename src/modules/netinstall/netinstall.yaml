@@ -19,7 +19,6 @@
   selected: true
   critical: true
   packages:
-     - cachy-browser
      - cachyos-fish-config
      - cachyos-ananicy-rules
      - cachyos-hello

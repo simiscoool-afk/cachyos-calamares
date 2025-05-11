@@ -712,7 +712,7 @@
 - name: "Firefox and language package"
   description: "Add firefox and language pack if possible"
   hidden: false
-  selected: false
+  selected: true
   critical: false
   packages:
     - firefox

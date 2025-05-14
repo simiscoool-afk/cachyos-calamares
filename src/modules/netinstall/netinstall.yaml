@@ -204,50 +204,55 @@
   selected: false
   critical: true
   packages:
-    - cachyos-nord-kde-theme-git
-    - cachyos-iridescent-kde
-    - cachyos-emerald-kde-theme-git
-    - cachyos-kde-settings
-    - cachyos-themes-sddm
     - ark
     - bluedevil
     - breeze-gtk
+    - cachyos-emerald-kde-theme-git
+    - cachyos-iridescent-kde
+    - cachyos-kde-settings
+    - cachyos-nord-kde-theme-git
+    - cachyos-themes-sddm
     - char-white
     - dolphin
     - egl-wayland
+    - ffmpegthumbs
+    - filelight
     - gwenview
     - haruna
-    - konsole
     - kate
-    - kdeconnect
+    - kcalc
     - kde-gtk-config
+    - kdeconnect
     - kdegraphics-thumbnailers
     - kdeplasma-addons
-    - ffmpegthumbs
+    - kdialog
     - kinfocenter
     - kinit
+    - kio-admin
+    - konsole
     - kscreen
     - kwallet-pam
     - kwalletmanager
-    - plasma-desktop
     - libplasma
+    - phonon-qt6-mpv
+    - plasma-browser-integration
+    - plasma-desktop
+    - plasma-firewall
+    - plasma-integration
     - plasma-nm
     - plasma-pa
-    - plasma-workspace
-    - plasma-integration
-    - plasma-firewall
-    - plasma-browser-integration
     - plasma-systemmonitor
     - plasma-thunderbolt
+    - plasma-workspace
+    - plymouth-kcm
     - powerdevil
-    - spectacle
+    - qt6-wayland
     - sddm
     - sddm-kcm
-    - qt6-wayland
-    - xsettingsd
+    - spectacle
     - xdg-desktop-portal
     - xdg-desktop-portal-kde
-    - phonon-qt6-mpv
+    - xsettingsd
 - name: "GNOME-Desktop"
   description: "GNOME Desktop - designed to put you in control and get things done."
   hidden: false

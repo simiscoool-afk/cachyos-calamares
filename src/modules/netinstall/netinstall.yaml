@@ -204,7 +204,7 @@
     - cachyos-themes-sddm
     - cachyos-wallpapers
     - cachyos-handheld
-    - edid-decode-git
+    - v4l-utils
     - maliit-keyboard
     - ark
     - bluedevil

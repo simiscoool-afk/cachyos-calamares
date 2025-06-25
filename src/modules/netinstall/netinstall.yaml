@@ -147,6 +147,7 @@
           - alsa-utils
           - pavucontrol
           - pipewire-pulse
+          - realtime-privileges
           - wireplumber
           - pipewire-alsa
           - rtkit

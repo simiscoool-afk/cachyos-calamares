@@ -248,7 +248,7 @@
     - xsettingsd
     - xdg-desktop-portal
     - xdg-desktop-portal-kde
-    - phonon-qt6-vlc
+    - phonon-qt6-mpv
 - name: "CPU specific Microcode update packages"
   description: "Microcode update image for AMD and Intel CPU"
   hidden: false

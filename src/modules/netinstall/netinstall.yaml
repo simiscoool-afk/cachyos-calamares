@@ -238,7 +238,7 @@
     - kwallet-pam
     - kwalletmanager
     - libplasma
-    - phonon-qt6-mpv
+    - phonon-qt6-vlc
     - plasma-browser-integration
     - plasma-desktop
     - plasma-firewall

@@ -686,6 +686,9 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
 def get_partition_drive(partition):
     devname = partition.replace("/dev/", "")
 
+    if not os.path.exists(f"/sys/class/block/{devname}/partition"):
+        return partition, 0
+
     with open(f"/sys/class/block/{devname}/partition", "r") as f:
         partition_number = f.readline().strip()
 
@@ -833,7 +836,7 @@ def install_limine(efi_directory, fw_type):
             "-w",
             "-L", efi_label(efi_directory),
             "-d", drive,
-            "-p", partition_number,
+            "-p", str(partition_number),
             "-l", "\\EFI\\BOOT\\BOOTX64.EFI"
         ])
 
@@ -851,8 +854,8 @@ def install_limine(efi_directory, fw_type):
 
         bios_sys_source = installation_root_path + "/usr/share/limine/limine-bios.sys"
         shutil.copy2(bios_sys_source, install_efi_directory)
-        check_target_env_call(["limine", "bios-install", boot_loader["installPath"]])
-        update_limine_config(efi_directory, installation_root_path, fw_type)
+        (drive, _) = get_partition_drive(boot_loader["installPath"])
+        check_target_env_call(["limine", "bios-install", drive])
 
     update_limine_config(efi_directory, installation_root_path, fw_type)
     add_additional_entries_limine(efi_directory, installation_root_path, fw_type)

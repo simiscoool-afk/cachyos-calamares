@@ -727,10 +727,9 @@ def add_additional_entries_limine(efi_directory, installation_root_path, fw_type
                 config_file.write(f"\timage_path: guid({uuid}):{efi_path}\n")
             elif fw_type != "efi" and len(partition) == 1:
                 (devname,) = partition
-                drive, partition_number = get_partition_drive(devname)
+                _, partition_number = get_partition_drive(devname)
                 config_file.write(f"//{pretty_name}\n")
                 config_file.write(f"\tprotocol: bios_chainload\n")
-                config_file.write(f"\tdrive: {drive}\n")
                 config_file.write(f"\tpartition: {partition_number}\n")
 
 def update_limine_config(efi_directory, installation_root_path, fw_type):

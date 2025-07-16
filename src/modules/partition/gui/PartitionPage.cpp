@@ -81,6 +81,12 @@ PartitionPage::PartitionPage( PartitionCoreModule* core, const Config & config, 
     m_ui->lvmButtonPanel->setVisible( config.isLVMEnabled() );
 
     updateButtons();
+
+    if ( m_ui->bootLoaderComboBox->count() ) {
+        m_ui->bootLoaderComboBox->setCurrentIndex( 0 );
+        m_lastSelectedBootLoaderIndex = 0;
+    }
+
     updateBootLoaderInstallPath();
 
     updateFromCurrentDevice();
@@ -545,7 +551,7 @@ PartitionPage::editExistingPartition( Device* device, Partition* partition )
 void
 PartitionPage::updateBootLoaderInstallPath()
 {
-    if ( m_isEfi || !m_ui->bootLoaderComboBox->isVisible() )
+    if ( m_isEfi )
     {
         return;
     }

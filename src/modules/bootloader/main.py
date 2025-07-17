@@ -800,46 +800,12 @@ def install_limine(efi_directory, fw_type):
     if not os.path.isdir(install_efi_directory):
         os.makedirs(install_efi_directory)
 
+    update_limine_config(efi_directory, installation_root_path, fw_type)
+    add_additional_entries_limine(efi_directory, installation_root_path, fw_type)
+
     if fw_type == "efi":
         libcalamares.utils.debug("Bootloader: limine (efi)")
-
-        # VFAT is weird, see issue CAL-385
-        install_efi_directory_firmware = (vfat_correct_case(
-            install_efi_directory,
-            "EFI"))
-        if not os.path.exists(install_efi_directory_firmware):
-            os.makedirs(install_efi_directory_firmware)
-
-        # there might be several values for the boot directory
-        # most usual they are boot, Boot, BOOT
-        install_efi_boot_directory = (vfat_correct_case(
-            install_efi_directory_firmware,
-            "boot"))
-        if not os.path.exists(install_efi_boot_directory):
-            os.makedirs(install_efi_boot_directory)
-
-        efi_file_source = installation_root_path + "/usr/share/limine/BOOTX64.EFI"
-        efi_file_destination = os.path.join(install_efi_boot_directory, "BOOTX64.EFI")
-        shutil.copy2(efi_file_source, efi_file_destination)
-
-        devname = next(
-            partition['device'] for partition in partitions
-            if partition["mountPoint"] == efi_directory
-        )
-        drive, partition_number = get_partition_drive(devname)
-
-        # Add limine boot entry via efibootmgr
-        subprocess.call([
-            libcalamares.job.configuration["efiBootMgr"],
-            "-c",
-            "-w",
-            "-L", efi_label(efi_directory),
-            "-d", drive,
-            "-p", str(partition_number),
-            "-l", "\\EFI\\BOOT\\BOOTX64.EFI"
-        ])
-
-        efi_boot_next()
+        check_target_env_call(["limine-install"])
     else:
         libcalamares.utils.debug("Bootloader: limine (bios)")
 
@@ -855,9 +821,6 @@ def install_limine(efi_directory, fw_type):
         shutil.copy2(bios_sys_source, install_efi_directory)
         (drive, _) = get_partition_drive(boot_loader["installPath"])
         check_target_env_call(["limine", "bios-install", drive])
-
-    update_limine_config(efi_directory, installation_root_path, fw_type)
-    add_additional_entries_limine(efi_directory, installation_root_path, fw_type)
 
 
 def install_grub(efi_directory, fw_type, install_hybrid_grub):

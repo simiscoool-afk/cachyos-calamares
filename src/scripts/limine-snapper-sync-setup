@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 limine_snapper_config="/etc/limine-snapper-sync.conf"
-limine_entry_tool_config="/etc/limine-entry-tool.conf"
 
 if [ -e "$limine_snapper_config" ]; then
     sed -i 's/TARGET_OS_NAME=".*"/TARGET_OS_NAME="CachyOS"/' "$limine_snapper_config"
@@ -11,9 +10,7 @@ if [ -e "$limine_snapper_config" ]; then
     systemctl enable limine-snapper-sync.service &>/dev/null
 fi
 
+# Replace limine-entry-tool with limine-mkinitcpio-hook to automate handling of
+# new kernels
+pacman -R --noconfirm limine-entry-tool
 pacman -S --noconfirm limine-mkinitcpio-hook
-if [ -e "$limine_entry_tool_config" ]; then
-    sed -i 's/REGISTER_LIMINE_EFI=yes/REGISTER_LIMINE_EFI=no/' "$limine_entry_tool_config"
-    sed -i 's/FIND_BOOTLOADERS=yes/FIND_BOOTLOADERS=no/' "$limine_entry_tool_config"
-    limine-mkinitcpio
-fi

@@ -97,9 +97,8 @@ def run():
     is_root_on_btrfs = (curr_filesystem == "btrfs\n")
     is_root_on_bcachefs = (curr_filesystem == "bcachefs\n")
 
-    if is_root_on_zfs:
-        libcalamares.utils.debug("Root on ZFS")
-        base_packages += ["zfs-utils", "linux-cachyos-zfs"]
+    if (is_root_on_zfs):
+        base_packages += ["zfs-utils", "linux-cachyos-zfs", "linux-cachyos-lts-zfs"]
     elif is_root_on_btrfs:
         libcalamares.utils.debug("Root on BTRFS")
         base_packages += ["snapper", "limine-snapper-sync", "btrfs-assistant"]

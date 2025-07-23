@@ -12,6 +12,8 @@
      - cachyos-rate-mirrors
      - linux-cachyos
      - linux-cachyos-headers
+     - linux-cachyos-lts
+     - linux-cachyos-lts-headers
      - grub-hook
      - chwd
 - name: "CachyOS Packages"

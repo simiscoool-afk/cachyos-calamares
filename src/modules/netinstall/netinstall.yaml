@@ -223,6 +223,7 @@
     - egl-wayland
     - ffmpegthumbs
     - filelight
+    - fwupd
     - gwenview
     - haruna
     - kate
@@ -269,6 +270,7 @@
     - eog
     - evince
     - file-roller
+    - fwupd
     - gdm
     - gedit
     - gnome

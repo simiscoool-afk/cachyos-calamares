@@ -21,5 +21,6 @@ if [ -e "$limine_snapper_config" ]; then
 # Please do not touch unless you know what you are doing.
 HOOKS+=(btrfs-overlayfs)
 EOF
-    limine-update
 fi
+
+limine-update

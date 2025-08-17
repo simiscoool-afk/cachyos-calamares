@@ -484,6 +484,47 @@
     - capitaine-cursors
     - kvantum-theme-nordic-git
     - cachyos-nord-gtk-theme-git
+- name: "Niri"
+  description: "A scrollable-tiling Wayland compositor."
+  hidden: false
+  selected: false
+  expanded: false
+  critical: true
+  packages:
+    - cachyos-alacritty-config
+    - cachyos-niri-settings
+    - ttf-fantasque-nerd
+    - ttf-font-awesome
+    - otf-font-awesome
+    - awesome-terminal-fonts
+    - noto-fonts
+    - noto-fonts-emoji
+    - ttf-fira-sans
+    - ttf-hack
+    - kvantum
+    - qt5ct
+    - swaybg
+    - swaylock-effects-git
+    - swaylock-fancy-git
+    - niri
+    - waybar
+    - xdg-desktop-portal-gnome
+    - xwayland-satellite
+    - mako
+    - wob
+    - pamixer
+    - wofi
+    - wlogout
+    - wl-clipboard
+    - polkit-kde-agent
+    - bemenu
+    - bemenu-wayland
+    - xorg-xwayland
+    - capitaine-cursors
+    - cachyos-wallpapers
+    - kvantum-theme-nordic-git
+    - brightnessctl
+    - cachyos-nord-gtk-theme-git
 - name: "LXDE-Desktop"
   description: "The Lightweight Desktop Environment."
   hidden: false

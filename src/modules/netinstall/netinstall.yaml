@@ -493,6 +493,7 @@
   packages:
     - cachyos-alacritty-config
     - cachyos-niri-settings
+    - sddm
     - ttf-fantasque-nerd
     - ttf-font-awesome
     - otf-font-awesome

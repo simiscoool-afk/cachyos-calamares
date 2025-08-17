@@ -780,6 +780,7 @@ def update_limine_config(efi_directory, installation_root_path, fw_type):
     with open(limine_entry_config_path, 'w') as limine_entry_config:
         limine_entry_config.write(f'ESP_PATH="{efi_directory}"\n')
         limine_entry_config.write(f'KERNEL_CMDLINE[default]+="{kernel_params}"\n')
+        limine_entry_config.write(f'BOOT_ORDER="*, *lts, *fallback, Snapshots"\n')
 
 def install_limine(efi_directory, fw_type):
     """

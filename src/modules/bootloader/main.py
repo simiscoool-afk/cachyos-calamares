@@ -547,7 +547,7 @@ def install_systemd_boot(efi_directory):
                                "loader.conf")
     subprocess.check_call(["bootctl",
                      "--path={!s}".format(install_efi_directory),
-                     "install"], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                     "install"], stderr=subprocess.STDOUT, stdout=subprocess.STDOUT)
 
     for (kernel, kernel_type, kernel_version) in get_kernels(installation_root_path):
         create_systemd_boot_conf(installation_root_path,

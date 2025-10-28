@@ -618,7 +618,6 @@
   selected: false
   critical: true
   packages:
-    - cachyos-openbox-settings
     - obconf-qt
     - libwnck3
     - acpi
@@ -628,7 +627,6 @@
     - dmenu
     - dunst
     - feh
-    - gtk-engine-murrine
     - gvfs
     - gvfs-afc
     - gvfs-gphoto2
@@ -642,7 +640,6 @@
     - lxappearance
     - mpv
     - network-manager-applet
-    - nitrogen
     - openbox
     - pasystray
     - picom

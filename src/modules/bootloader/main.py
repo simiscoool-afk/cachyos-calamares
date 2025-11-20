@@ -547,7 +547,7 @@ def install_systemd_boot(efi_directory):
                                "loader.conf")
     subprocess.check_call(["bootctl",
                      "--path={!s}".format(install_efi_directory),
-                     "install"], stderr=subprocess.STDOUT, stdout=subprocess.STDOUT)
+                     "install"], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
 
     for (kernel, kernel_type, kernel_version) in get_kernels(installation_root_path):
         create_systemd_boot_conf(installation_root_path,
@@ -657,7 +657,7 @@ def run_grub_install(fw_type, partitions, efi_directory, install_hybrid_grub):
             boot_loader_install_path = boot_loader["installPath"]
             if boot_loader_install_path is None:
                 return
-            
+
         # boot_loader_install_path points to the physical disk to install GRUB
         # to. It should start with "/dev/", and be at least as long as the
         # string "/dev/sda".

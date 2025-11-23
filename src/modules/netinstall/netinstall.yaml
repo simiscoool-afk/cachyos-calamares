@@ -424,7 +424,7 @@
     - cosmic-wallpapers
     - cosmic-workspaces
     - notification-daemon
-    - sddm
+    - cosmic-greeter
     - xdg-desktop-portal-cosmic
     - xorg-xwayland
 - name: "i3-Window-Manager"

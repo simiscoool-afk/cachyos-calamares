@@ -104,7 +104,7 @@ def run():
         base_packages += ["snapper", "btrfs-assistant"]
     elif is_root_on_bcachefs:
         libcalamares.utils.debug("Root on BCACHEFS")
-        base_packages += ["bcachefs-tools"]
+        base_packages += ["bcachefs-tools", "bcachefs-dkms"]
 
     # run the pacstrap
     pacstrap_command = ["/etc/calamares/scripts/pacstrap_calamares", "-c", root_mount_point] + base_packages

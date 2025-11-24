@@ -104,6 +104,20 @@ def find_initcpio_features(partitions, root_mount_point):
     systemd_hook_allowed = libcalamares.job.configuration.get("useSystemdHook", False)
     is_zfs_native_encrypted = libcalamares.globalstorage.value("zfsEncrypted")
 
+    # Check if ZFS or bcachefs is used
+    uses_zfs = False
+    uses_bcachefs = False
+    for partition in partitions:
+        if partition["fs"] == "zfs" and libcalamares.globalstorage.contains("zfsPoolInfo"):
+            uses_zfs = True
+
+        if partition["fs"] == "bcachefs":
+            uses_bcachefs = True
+
+    # Disable systemd hook if ZFS or bcachefs is used
+    if uses_zfs or uses_bcachefs:
+        systemd_hook_allowed = False
+
     use_systemd = systemd_hook_allowed and target_env_call(["sh", "-c", "which systemd-cat"]) == 0
 
     if use_systemd:
@@ -129,7 +143,7 @@ def find_initcpio_features(partitions, root_mount_point):
 
     swap_uuid = ""
     uses_btrfs = False
-    uses_zfs = False
+    # uses_zfs is already initialized above
     uses_lvm2 = False
     encrypt_hook = False
     openswap_hook = False
@@ -152,9 +166,6 @@ def find_initcpio_features(partitions, root_mount_point):
         if partition["fs"] == "btrfs":
             uses_btrfs = True
 
-        # In addition to checking the filesystem, check to ensure that zfs is enabled
-        if partition["fs"] == "zfs" and libcalamares.globalstorage.contains("zfsPoolInfo"):
-            uses_zfs = True
 
         if "lvm2" in partition["fs"]:
             uses_lvm2 = True

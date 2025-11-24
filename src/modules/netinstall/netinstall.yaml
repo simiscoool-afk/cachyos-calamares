@@ -523,21 +523,14 @@
     - gvfs-smb
     - lxappearance
     - obconf-qt
-    - lxde-common
+    - lxde
     - lxde-icon-theme
-    - lxhotkey-gtk3
-    - lxinput-gtk3
-    - lxlauncher-gtk3
-    - lxpanel-gtk3
-    - lxrandr-gtk3
-    - lxsession-gtk3
-    - lxtask-gtk3
     - lxterminal
     - lightdm
     - lightdm-slick-greeter
     - notification-daemon
     - openbox
-    - pcmanfm-gtk3
+    - pcmanfm
     - lxmusic
     - network-manager-applet
     - xdg-user-dirs-gtk

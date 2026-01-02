@@ -378,7 +378,6 @@
     - lightdm-slick-greeter
     - nemo
     - nemo-fileroller
-    - nemo-preview
     - network-manager-applet
     - sushi
     - totem
@@ -393,7 +392,6 @@
     - system-config-printer
     - gnome-keyring
     - gnome-terminal
-    - blueberry
     - metacity
     - lightdm
     - lightdm-gtk-greeter

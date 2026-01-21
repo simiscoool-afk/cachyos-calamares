@@ -28,17 +28,30 @@ static bool gShowConfError{};
 
 /// Recursive helper for setSelections()
 static void
-setSelections( const QStringList& selectNames, PackageTreeItem* item )
+updateSelections( const QStringList& selectNames, const QStringList& unselectNames, PackageTreeItem* item )
 {
     for ( int i = 0; i < item->childCount(); i++ )
     {
         auto* child = item->child( i );
-        setSelections( selectNames, child );
+        updateSelections( selectNames, unselectNames, child );
     }
-    if ( item->isGroup() && selectNames.contains( item->name() ) )
+    if ( item->isGroup() )
     {
-        item->setSelected( Qt::CheckState::Checked );
+        if ( selectNames.contains( item->name() ) )
+        {
+            item->setSelected( Qt::CheckState::Checked );
+        }
+        else if ( unselectNames.contains( item->name() ) )
+        {
+            item->setSelected( Qt::CheckState::Unchecked );
+        }
     }
+}
+
+static void
+setSelections( const QStringList& selectNames, PackageTreeItem* item )
+{
+    updateSelections( selectNames, {}, item );
 }
 
 /** @brief Collects all the "source" values from @p groupList
@@ -296,6 +309,15 @@ PackageModel::setSelections( const QStringList& selectNames )
     if ( m_rootItem )
     {
         ::setSelections( selectNames, m_rootItem );
+    }
+}
+
+void
+PackageModel::updateSelections( const QStringList& selectNames, const QStringList& unselectNames )
+{
+    if ( m_rootItem )
+    {
+        ::updateSelections( selectNames, unselectNames, m_rootItem );
     }
 }
 

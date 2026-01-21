@@ -67,6 +67,15 @@ public:
      */
     void setSelections( const QStringList& selectNames );
 
+    /** @brief Sets and unsets the checked flag on matching groups in the tree
+     *
+     * Recursively traverses the tree pointed to by m_rootItem.
+     * If a group name matches any of the items in @p selectNames, it is checked.
+     * If a group name matches any of the items in @p unselectNames, it is unchecked.
+     *
+     */
+    void updateSelections( const QStringList& selectNames, const QStringList& unselectNames );
+
     PackageTreeItem::List getPackages() const;
     PackageTreeItem::List getItemPackages( PackageTreeItem* item ) const;
 

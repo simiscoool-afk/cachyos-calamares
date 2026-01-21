@@ -48,6 +48,7 @@ public:
     void expandGroups();
 
 private:
+    QStringList m_alreadySelected;
     Config* m_config;
     Ui::Page_NetInst* ui;
 };

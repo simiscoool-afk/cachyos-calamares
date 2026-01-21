@@ -43,6 +43,7 @@ private Q_SLOTS:
     void testGroup();
     void testCompare();
     void testModel();
+    void testUpdateSelections();
     void testExampleFiles();
 
     void testUrlFallback_data();
@@ -304,6 +305,30 @@ ItemTests::testModel()
 
     // But m2 has "expanded" set which the others do no
     QVERIFY( *( m2.m_rootItem->child( 0 ) ) != *group );
+}
+
+void
+ItemTests::testUpdateSelections()
+{
+    auto yamldoc = ::YAML::Load( doc );
+    QVariantList yamlContents = Calamares::YAML::sequenceToVariant( yamldoc );
+
+    PackageModel m( nullptr );
+    m.setupModelData( yamlContents );
+
+    // Verify initial state
+    QCOMPARE( m.m_rootItem->childCount(), 1 );
+    PackageTreeItem* group = m.m_rootItem->child( 0 );
+    QCOMPARE( group->name(), QStringLiteral( "CCR" ) );
+    QCOMPARE( group->isSelected(), Qt::Checked );
+
+    // Test unselecting
+    m.updateSelections( {}, { "CCR" } );
+    QCOMPARE( group->isSelected(), Qt::Unchecked );
+
+    // Test selecting back
+    m.updateSelections( { "CCR" }, {} );
+    QCOMPARE( group->isSelected(), Qt::Checked );
 }
 
 void

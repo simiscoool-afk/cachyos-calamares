@@ -179,11 +179,22 @@ def find_initcpio_features(partitions, root_mount_point):
         if partition["mountPoint"] == "/usr":
             hooks.append("usr")
 
+    # Check if TPM auto-unlock is enabled
+    use_tpm = libcalamares.globalstorage.value("useTpmEncryption")
+
     if encrypt_hook:
         if use_systemd:
             hooks.append("sd-encrypt")
+            if use_tpm:
+                libcalamares.utils.debug("TPM auto-unlock enabled with sd-encrypt hook")
         else:
             hooks.append("encrypt")
+            if use_tpm:
+                # TPM auto-unlock requires systemd hooks (sd-encrypt)
+                libcalamares.utils.warning(
+                    "TPM auto-unlock requires systemd hooks. "
+                    "Auto-unlock may not work with busybox-based encrypt hook."
+                )
         crypto_file = "crypto_keyfile.bin"
         if not unencrypted_separate_boot and os.path.isfile(os.path.join(root_mount_point, crypto_file)):
             files.append(f"/{crypto_file}")

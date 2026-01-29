@@ -36,6 +36,13 @@ public:
         Confirmed
     };
 
+    enum class TpmState : unsigned short
+    {
+        Unavailable = 0,  // No TPM detected on system
+        Disabled,         // TPM available but not selected
+        Enabled           // TPM auto-unlock enabled
+    };
+
     explicit EncryptWidget( QWidget* parent = nullptr );
 
     void setEncryptionCheckbox( bool preCheckEncrypt = false );
@@ -55,8 +62,20 @@ public:
 
     void retranslate();
 
+    /// @brief Set whether the TPM checkbox should be visible
+    void setTpmCheckboxVisible( bool visible );
+    /// @brief Set whether the TPM checkbox should be enabled (can be toggled)
+    void setTpmCheckboxEnabled( bool enabled );
+    /// @brief Returns true if TPM auto-unlock is enabled
+    bool isTpmEnabled() const;
+    /// @brief Returns the current TPM state
+    TpmState tpmState() const;
+    /// @brief Check if TPM2 is available on this system
+    static bool isTpmAvailable();
+
 signals:
     void stateChanged( Encryption );
+    void tpmStateChanged( TpmState );
 
 private:
     void updateState( const bool notify = true );
@@ -65,8 +84,12 @@ private:
 
     Ui::EncryptWidget* m_ui;
     Encryption m_state;
+    TpmState m_tpmState;
 
     FileSystem::Type m_filesystem;
+
+    void onTpmCheckBoxStateChanged( Calamares::checkBoxStateType checked );
+    void updateTpmState();
 };
 
 #endif  // ENCRYPTWIDGET_H

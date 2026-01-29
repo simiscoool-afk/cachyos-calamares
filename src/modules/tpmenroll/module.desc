@@ -1,0 +1,5 @@
+---
+type: "job"
+name: "tpmenroll"
+interface: "qtplugin"
+load: "libtpmenroll.so"

@@ -38,6 +38,7 @@ class Config : public QObject
     Q_PROPERTY( bool allowManualPartitioning READ allowManualPartitioning CONSTANT FINAL )
     Q_PROPERTY( bool preCheckEncryption READ preCheckEncryption CONSTANT FINAL )
     Q_PROPERTY( bool showNotEncryptedBootMessage READ showNotEncryptedBootMessage CONSTANT FINAL )
+    Q_PROPERTY( bool enableTpmEncryption READ enableTpmEncryption CONSTANT FINAL )
 
     Q_PROPERTY( bool lvmEnabled READ isLVMEnabled CONSTANT FINAL )
 
@@ -179,6 +180,9 @@ public:
     /// @brief If zfs encryption should be allowed
     bool allowZfsEncryption() const { return m_allowZfsEncryption; }
 
+    /// @brief If TPM encryption checkbox should be shown in UI
+    bool enableTpmEncryption() const { return m_enableTpmEncryption; }
+
     bool isLVMEnabled() const { return m_isLVMEnabled; }
 
     /** @brief A list of names that can follow /dev/mapper/ that must not be closed
@@ -225,6 +229,7 @@ private:
     bool m_allowManualPartitioning = true;
     bool m_preCheckEncryption = false;
     bool m_showNotEncryptedBootMessage = true;
+    bool m_enableTpmEncryption = true;  // Default to true, show TPM option if available
     bool m_isLVMEnabled = true;
     QStringList m_essentialMounts;
     QVariantMap m_configurationMap;

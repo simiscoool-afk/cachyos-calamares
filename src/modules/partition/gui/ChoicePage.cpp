@@ -707,6 +707,9 @@ ChoicePage::onLeave()
         = useLuksPassphrase ? Calamares::String::obscure( m_encryptWidget->passphrase() ) : QString();
     gs->insert( "luksPassphrase", storedLuksPassphrase );
 
+    // Store TPM encryption preference
+    gs->insert( "useTpmEncryption", m_encryptWidget->isTpmEnabled() );
+
     if ( m_config->installChoice() == InstallChoice::Alongside )
     {
         if ( m_afterPartitionSplitterWidget->splitPartitionSize() >= 0

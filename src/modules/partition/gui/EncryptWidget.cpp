@@ -14,6 +14,7 @@
 #include "ui_EncryptWidget.h"
 
 #include "Branding.h"
+#include "core/TpmUtils.h"
 #include "utils/Gui.h"
 #include "utils/Retranslator.h"
 
@@ -40,6 +41,7 @@ EncryptWidget::EncryptWidget( QWidget* parent )
     : QWidget( parent )
     , m_ui( new Ui::EncryptWidget )
     , m_state( Encryption::Disabled )
+    , m_tpmState( TpmUtils::isTpm2Available() ? TpmState::Disabled : TpmState::Unavailable )
 {
     m_ui->setupUi( this );
 
@@ -64,6 +66,25 @@ EncryptWidget::EncryptWidget( QWidget* parent )
         m_ui->m_encryptCheckBox, Calamares::checkBoxStateChangedSignal, this, &EncryptWidget::onCheckBoxStateChanged );
     connect( m_ui->m_passphraseLineEdit, &QLineEdit::textEdited, this, &EncryptWidget::onPassphraseEdited );
     connect( m_ui->m_confirmLineEdit, &QLineEdit::textEdited, this, &EncryptWidget::onPassphraseEdited );
+
+    // TPM checkbox setup
+    connect(
+        m_ui->m_tpmCheckBox, Calamares::checkBoxStateChangedSignal, this, &EncryptWidget::onTpmCheckBoxStateChanged );
+
+    // Initialize TPM checkbox state based on TPM availability
+    if ( m_tpmState == TpmState::Unavailable )
+    {
+        m_ui->m_tpmCheckBox->setVisible( false );
+    }
+    else
+    {
+        m_ui->m_tpmCheckBox->setVisible( true );
+        m_ui->m_tpmCheckBox->setEnabled( false );  // Enabled only when encryption is checked
+        m_ui->m_tpmCheckBox->setToolTip(
+            tr( "Enable automatic disk unlock using your computer's TPM chip. "
+                "A passphrase is still required for recovery.",
+                "@tooltip" ) );
+    }
 
     setFixedHeight( m_ui->m_passphraseLineEdit->height() );  // Avoid jumping up and down
     updateState();
@@ -214,6 +235,17 @@ EncryptWidget::onCheckBoxStateChanged( Calamares::checkBoxStateType checked )
     m_ui->m_confirmLineEdit->clear();
     m_ui->m_iconLabel->clear();
 
+    // Enable/disable TPM checkbox based on encryption state
+    if ( m_tpmState != TpmState::Unavailable )
+    {
+        m_ui->m_tpmCheckBox->setEnabled( visible );
+        if ( !visible )
+        {
+            m_ui->m_tpmCheckBox->setChecked( false );
+            updateTpmState();
+        }
+    }
+
     updateState();
 }
 
@@ -224,5 +256,65 @@ EncryptWidget::setFilesystem( const FileSystem::Type fs )
     if ( m_state != Encryption::Disabled )
     {
         updateState( false );
+    }
+}
+
+void
+EncryptWidget::setTpmCheckboxVisible( bool visible )
+{
+    // Only show if TPM is available
+    if ( m_tpmState != TpmState::Unavailable )
+    {
+        m_ui->m_tpmCheckBox->setVisible( visible );
+    }
+}
+
+void
+EncryptWidget::setTpmCheckboxEnabled( bool enabled )
+{
+    if ( m_tpmState != TpmState::Unavailable )
+    {
+        m_ui->m_tpmCheckBox->setEnabled( enabled );
+    }
+}
+
+bool
+EncryptWidget::isTpmEnabled() const
+{
+    return m_tpmState == TpmState::Enabled;
+}
+
+EncryptWidget::TpmState
+EncryptWidget::tpmState() const
+{
+    return m_tpmState;
+}
+
+bool
+EncryptWidget::isTpmAvailable()
+{
+    return TpmUtils::isTpm2Available();
+}
+
+void
+EncryptWidget::onTpmCheckBoxStateChanged( Calamares::checkBoxStateType checked )
+{
+    updateTpmState();
+}
+
+void
+EncryptWidget::updateTpmState()
+{
+    if ( m_tpmState == TpmState::Unavailable )
+    {
+        return;
+    }
+
+    TpmState newState = m_ui->m_tpmCheckBox->isChecked() ? TpmState::Enabled : TpmState::Disabled;
+
+    if ( newState != m_tpmState )
+    {
+        m_tpmState = newState;
+        Q_EMIT tpmStateChanged( m_tpmState );
     }
 }

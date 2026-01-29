@@ -68,6 +68,7 @@ if(KPMcore_FOUND)
             core/PartitionLayout.cpp
             core/PartitionModel.cpp
             core/PartUtils.cpp
+            core/TpmUtils.cpp
             gui/BootInfoWidget.cpp
             gui/ChoicePage.cpp
             gui/CreatePartitionDialog.cpp

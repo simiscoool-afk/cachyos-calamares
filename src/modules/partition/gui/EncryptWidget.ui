@@ -51,6 +51,16 @@ SPDX-License-Identifier: GPL-3.0-or-later
     </widget>
    </item>
    <item>
+    <widget class="QCheckBox" name="m_tpmCheckBox">
+     <property name="text">
+      <string>Use &amp;TPM for auto-unlock</string>
+     </property>
+     <property name="toolTip">
+      <string>Enable automatic disk unlock using your computer's TPM chip. A passphrase is still required for recovery.</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLineEdit" name="m_passphraseLineEdit">
      <property name="echoMode">
       <enum>QLineEdit::Password</enum>

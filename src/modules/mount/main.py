@@ -248,7 +248,8 @@ def mount_partition(root_mount_point, partition, partitions, mount_options, moun
     # Ensure that the created directory has the correct SELinux context on
     # SELinux-enabled systems.
 
-    os.makedirs(mount_point, exist_ok=True)
+    mode = 0o750 if raw_mount_point == "/root" else 0o777
+    os.makedirs(mount_point, mode=mode, exist_ok=true)
 
     try:
         subprocess.call(['chcon', '--reference=' + raw_mount_point, mount_point])

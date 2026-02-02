@@ -249,7 +249,7 @@ def mount_partition(root_mount_point, partition, partitions, mount_options, moun
     # SELinux-enabled systems.
 
     mode = 0o750 if raw_mount_point == "/root" else 0o777
-    os.makedirs(mount_point, mode=mode, exist_ok=true)
+    os.makedirs(mount_point, mode=mode, exist_ok=True)
 
     try:
         subprocess.call(['chcon', '--reference=' + raw_mount_point, mount_point])
@@ -293,6 +293,8 @@ def mount_partition(root_mount_point, partition, partitions, mount_options, moun
         for s in btrfs_subvolumes:
             if not s["subvolume"]:
                 continue
+
+            mode = 0o750 if s["subvolume"] == "/@root" else 0o777
             os.makedirs(root_mount_point + os.path.dirname(s["subvolume"]), exist_ok=True)
             subprocess.check_call(["btrfs", "subvolume", "create",
                                    root_mount_point + s["subvolume"]])

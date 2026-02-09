@@ -203,9 +203,12 @@
   selected: false
   critical: true
   packages:
+    - cachyos-nord-kde-theme-git
+    - cachyos-iridescent-kde
+    - cachyos-emerald-kde-theme-git
+    - cachyos-themes-sddm
     - cachyos-wallpapers
     - cachyos-handheld
-    - plasma-login-manager
     - v4l-utils
     - plasma-keyboard
     - ark
@@ -238,6 +241,8 @@
     - plasma-thunderbolt
     - powerdevil
     - spectacle
+    - sddm
+    - sddm-kcm
     - qt6-wayland
     - xsettingsd
     - xdg-desktop-portal

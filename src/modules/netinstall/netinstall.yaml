@@ -10,11 +10,27 @@
      - cachyos-v3-mirrorlist
      - cachyos-v4-mirrorlist
      - cachyos-rate-mirrors
+     - chwd
+- name: "CachyOS kernels (hidden)"
+  description: "CachyOS kernels to install"
+  hidden: true
+  selected: true
+  critical: true
+  platform: "desktop"
+  packages:
      - linux-cachyos
      - linux-cachyos-headers
      - linux-cachyos-lts
      - linux-cachyos-lts-headers
-     - chwd
+- name: "CachyOS kernels (hidden/handheld)"
+  description: "CachyOS kernels to install (Handheld)"
+  hidden: true
+  selected: true
+  critical: true
+  platform: "handheld"
+  packages:
+     - linux-cachyos-deckify
+     - linux-cachyos-deckify-headers
 - name: "CachyOS Packages"
   description: "needed CachyOS packages"
   hidden: false
@@ -228,7 +244,18 @@
     - plasma-login-manager
     - spectacle
     - xsettingsd
+- name: "CachyOS Handhelds"
+  description: "Basic packages for handhelds"
+  platform: "handheld"
+  hidden: false
+  selected: true
+  critical: true
+  packages:
+    - cachyos-handheld
+    - plasma-keyboard
+    - v4l-utils
 - name: "GNOME-Desktop"
+  platform: "desktop"
   description: "GNOME desktop environment - designed to put you in control and get things done."
   hidden: false
   selected: false
@@ -267,6 +294,7 @@
           - gvfs-gphoto2
           - gvfs-mtp
 - name: "Xfce4"
+  platform: "desktop"
   description: "Xfce is a lightweight desktop environment for UNIX-like operating systems. It aims to be fast and low on system resources, while still being visually appealing and user friendly."
   hidden: false
   selected: false
@@ -306,6 +334,7 @@
     - xfce4-whiskermenu-plugin
     - xfce4-xkb-plugin
 - name: "bspwm"
+  platform: "desktop"
   description: "bspwm is a tiling window manager that represents windows as the leaves of a full binary tree. bspwm supports multiple monitors and is configured and controlled through messages."
   hidden: false
   selected: false
@@ -322,6 +351,7 @@
     - xorg-xinit
     - xorg-xrandr
 - name: "Budgie-Desktop"
+  platform: "desktop"
   description: "Budgie - an independent, familiar, and modern desktop."
   hidden: false
   selected: false
@@ -354,6 +384,7 @@
     - totem
     - xdg-user-dirs-gtk
 - name: "Cinnamon"
+  platform: "desktop"
   description: "Linux desktop which provides advanced innovative features and a traditional user experience."
   hidden: false
   selected: false
@@ -368,6 +399,7 @@
     - lightdm
     - lightdm-gtk-greeter
 - name: "Cosmic"
+  platform: "desktop"
   description: "Linux desktop, which provides an environment that features advanced functionality and a responsive design."
   hidden: false
   selected: false
@@ -399,6 +431,7 @@
     - xdg-desktop-portal-cosmic
     - xorg-xwayland
 - name: "i3-Window-Manager"
+  platform: "desktop"
   description: "i3 tiling window manager, primarily targeted at developers and advanced users."
   hidden: false
   selected: false
@@ -419,6 +452,7 @@
     - xorg-xinit
     - xorg-xrandr
 - name: "Hyprland"
+  platform: "desktop"
   description: "Hyprland is a highly customizable dynamic tiling Wayland compositor that doesn't sacrifice on its looks."
   hidden: false
   selected: false
@@ -437,6 +471,7 @@
     - polkit-kde-agent
     - xorg-xwayland
 - name: "Niri"
+  platform: "desktop"
   description: "A scrollable-tiling Wayland compositor."
   hidden: false
   selected: false
@@ -446,6 +481,7 @@
     - cachyos-niri-noctalia
     - sddm
 - name: "LXDE-Desktop"
+  platform: "desktop"
   description: "The Lightweight Desktop Environment."
   hidden: false
   selected: false
@@ -477,6 +513,7 @@
     - xdg-user-dirs-gtk
     - xed
 - name: "LXQT-Desktop"
+  platform: "desktop"
   description: "The Lightweight Qt Desktop Environment."
   hidden: false
   selected: false
@@ -505,6 +542,7 @@
     - xscreensaver
     - xsettingsd
 - name: "MATE-Desktop"
+  platform: "desktop"
   description: "MATE Desktop - the continuation of GNOME 2"
   hidden: false
   selected: false
@@ -524,6 +562,7 @@
     - network-manager-applet
     - xdg-user-dirs-gtk
 - name: "Openbox"
+  platform: "desktop"
   description: "Openbox is a highly configurable, floating window manager with extensive standards support."
   hidden: false
   selected: false
@@ -572,6 +611,7 @@
     - xed
     - xfce4-terminal
 - name: "Qtile"
+  platform: "desktop"
   description: "Qtile is a X11 window manager that is configured with the Python programming language."
   hidden: false
   selected: false
@@ -597,6 +637,7 @@
     - picom
     - ly
 - name: "Sway"
+  platform: "desktop"
   description: "Sway is a tiling Wayland compositor and a drop-in replacement for the i3 window manager for X11. It works with your existing i3 configuration and supports most of i3's features, plus a few extras."
   hidden: false
   selected: false
@@ -615,6 +656,7 @@
     - xdg-desktop-portal
     - xdg-desktop-portal-wlr
 - name: "UKUI"
+  platform: "desktop"
   description: "It is a lightweight desktop environment, which consumes few resources and works with older computers. It has been developed with GTK and Qt technologies. Its visual appearance is similar to Windows 7, making it easier for new users of Linux."
   hidden: false
   selected: false
@@ -653,6 +695,7 @@
     - gvfs
     - qt5-quickcontrols
 - name: "Wayfire"
+  platform: "desktop"
   description: "Wayfire is a wayland compositor based on wlroots. It aims to create a customizable, extendable and lightweight environment without sacrificing its appearance."
   hidden: false
   selected: false
@@ -684,6 +727,7 @@
     - firefox
     - firefox-i18n-$LOCALE
 - name: "Printing-Support"
+  platform: "desktop"
   description: "Support for printing (Cups)"
   hidden: false
   selected: false
@@ -704,6 +748,7 @@
     - splix
     - system-config-printer
 - name: "Support for HP Printer/Scanner"
+  platform: "desktop"
   description: "Extra Packages for HP Printer/Scanner"
   hidden: false
   selected: false

@@ -16,6 +16,7 @@
 #include "utils/Retranslator.h"
 
 #include <QLabel>
+#include <QPixmap>
 
 PackageChooserPage::PackageChooserPage( PackageChooserMode mode, QWidget* parent )
     : QWidget( parent )
@@ -25,7 +26,7 @@ PackageChooserPage::PackageChooserPage( PackageChooserMode mode, QWidget* parent
                       tr( "Package Selection" ),
                       tr( "Please pick a product from the list. The selected product will be installed." ) )
 {
-    m_introduction.screenshot = QPixmap( QStringLiteral( ":/images/no-selection.png" ) );
+    m_introduction.screenshotPath = QStringLiteral( ":/images/no-selection.png" );
 
     ui->setupUi( this );
     CALAMARES_RETRANSLATE( updateLabels(); );
@@ -52,7 +53,7 @@ PackageChooserPage::currentChanged( const QModelIndex& index )
     if ( !index.isValid() || !ui->products->selectionModel()->hasSelection() )
     {
         ui->productName->setText( m_introduction.name.get() );
-        ui->productScreenshot->setPixmap( m_introduction.screenshot );
+        ui->productScreenshot->setPixmap( QPixmap( m_introduction.screenshotPath ) );
         ui->productDescription->setText( m_introduction.description.get() );
     }
     else
@@ -67,17 +68,13 @@ PackageChooserPage::currentChanged( const QModelIndex& index )
         {
             ui->productScreenshot->setAnimatedImage( path );
         }
+        else if ( !path.isEmpty() )
+        {
+            ui->productScreenshot->setPixmap( QPixmap( path ) );
+        }
         else
         {
-            QPixmap currentScreenshot = model->data( index, PackageListModel::ScreenshotRole ).value< QPixmap >();
-            if ( currentScreenshot.isNull() )
-            {
-                ui->productScreenshot->setPixmap( m_introduction.screenshot );
-            }
-            else
-            {
-                ui->productScreenshot->setPixmap( currentScreenshot );
-            }
+            ui->productScreenshot->setPixmap( QPixmap( m_introduction.screenshotPath ) );
         }
     }
 }
@@ -149,5 +146,5 @@ PackageChooserPage::setIntroduction( const PackageItem& item )
 {
     m_introduction.name = item.name;
     m_introduction.description = item.description;
-    m_introduction.screenshot = item.screenshot;
+    m_introduction.screenshotPath = item.screenshotPath;
 }

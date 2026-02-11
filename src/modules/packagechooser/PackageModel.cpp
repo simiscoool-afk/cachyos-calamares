@@ -42,18 +42,7 @@ resolveScreenshotPath( const QString& path )
             return brandingPath;
         }
     }
-    return path;
-}
-
-static QPixmap
-loadScreenshot( const QString& path )
-{
-    QString resolved = resolveScreenshotPath( path );
-    if ( QFileInfo::exists( resolved ) )
-    {
-        return QPixmap( resolved );
-    }
-    return QPixmap();
+    return QString();
 }
 
 PackageItem::PackageItem() {}
@@ -72,7 +61,6 @@ PackageItem::PackageItem( const QString& a_id,
     : id( a_id )
     , name( a_name )
     , description( a_description )
-    , screenshot( a_screenshotPath )
     , screenshotPath( resolveScreenshotPath( a_screenshotPath ) )
 {
 }
@@ -81,7 +69,6 @@ PackageItem::PackageItem( const QVariantMap& item_map )
     : id( Calamares::getString( item_map, "id" ) )
     , name( Calamares::Locale::TranslatedString( item_map, "name" ) )
     , description( Calamares::Locale::TranslatedString( item_map, "description" ) )
-    , screenshot( loadScreenshot( Calamares::getString( item_map, "screenshot" ) ) )
     , screenshotPath( resolveScreenshotPath( Calamares::getString( item_map, "screenshot" ) ) )
     , packageNames( Calamares::getStringList( item_map, "packages" ) )
     , netinstallData( getSubMap( item_map, "netinstall" ) )
@@ -199,10 +186,6 @@ PackageListModel::data( const QModelIndex& index, int role ) const
     else if ( role == DescriptionRole )
     {
         return m_packages[ row ].description.get();
-    }
-    else if ( role == ScreenshotRole )
-    {
-        return m_packages[ row ].screenshot;
     }
     else if ( role == IdRole )
     {

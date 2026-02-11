@@ -62,14 +62,22 @@ PackageChooserPage::currentChanged( const QModelIndex& index )
         ui->productName->setText( model->data( index, PackageListModel::NameRole ).toString() );
         ui->productDescription->setText( model->data( index, PackageListModel::DescriptionRole ).toString() );
 
-        QPixmap currentScreenshot = model->data( index, PackageListModel::ScreenshotRole ).value< QPixmap >();
-        if ( currentScreenshot.isNull() )
+        const QString path = model->data( index, PackageListModel::ScreenshotPathRole ).toString();
+        if ( !path.isEmpty() && path.endsWith( QStringLiteral( ".gif" ), Qt::CaseInsensitive ) )
         {
-            ui->productScreenshot->setPixmap( m_introduction.screenshot );
+            ui->productScreenshot->setAnimatedImage( path );
         }
         else
         {
-            ui->productScreenshot->setPixmap( currentScreenshot );
+            QPixmap currentScreenshot = model->data( index, PackageListModel::ScreenshotRole ).value< QPixmap >();
+            if ( currentScreenshot.isNull() )
+            {
+                ui->productScreenshot->setPixmap( m_introduction.screenshot );
+            }
+            else
+            {
+                ui->productScreenshot->setPixmap( currentScreenshot );
+            }
         }
     }
 }

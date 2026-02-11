@@ -25,20 +25,35 @@ getSubMap( const QVariantMap& map, const QString& key )
     return Calamares::getSubMap( map, key, success );
 }
 
-static QPixmap
-loadScreenshot( const QString& path )
+static QString
+resolveScreenshotPath( const QString& path )
 {
     if ( QFileInfo::exists( path ) )
     {
-        return QPixmap( path );
+        return path;
     }
 
     const auto* branding = Calamares::Branding::instance();
-    if ( !branding )
+    if ( branding )
     {
-        return QPixmap();
+        QString brandingPath = branding->componentDirectory() + QStringLiteral( "/" ) + path;
+        if ( QFileInfo::exists( brandingPath ) )
+        {
+            return brandingPath;
+        }
     }
-    return QPixmap( branding->componentDirectory() + QStringLiteral( "/" ) + path );
+    return path;
+}
+
+static QPixmap
+loadScreenshot( const QString& path )
+{
+    QString resolved = resolveScreenshotPath( path );
+    if ( QFileInfo::exists( resolved ) )
+    {
+        return QPixmap( resolved );
+    }
+    return QPixmap();
 }
 
 PackageItem::PackageItem() {}
@@ -53,11 +68,12 @@ PackageItem::PackageItem( const QString& a_id, const QString& a_name, const QStr
 PackageItem::PackageItem( const QString& a_id,
                           const QString& a_name,
                           const QString& a_description,
-                          const QString& screenshotPath )
+                          const QString& a_screenshotPath )
     : id( a_id )
     , name( a_name )
     , description( a_description )
-    , screenshot( screenshotPath )
+    , screenshot( a_screenshotPath )
+    , screenshotPath( resolveScreenshotPath( a_screenshotPath ) )
 {
 }
 
@@ -66,6 +82,7 @@ PackageItem::PackageItem( const QVariantMap& item_map )
     , name( Calamares::Locale::TranslatedString( item_map, "name" ) )
     , description( Calamares::Locale::TranslatedString( item_map, "description" ) )
     , screenshot( loadScreenshot( Calamares::getString( item_map, "screenshot" ) ) )
+    , screenshotPath( resolveScreenshotPath( Calamares::getString( item_map, "screenshot" ) ) )
     , packageNames( Calamares::getStringList( item_map, "packages" ) )
     , netinstallData( getSubMap( item_map, "netinstall" ) )
 {
@@ -190,6 +207,10 @@ PackageListModel::data( const QModelIndex& index, int role ) const
     else if ( role == IdRole )
     {
         return m_packages[ row ].id;
+    }
+    else if ( role == ScreenshotPathRole )
+    {
+        return m_packages[ row ].screenshotPath;
     }
 
     return QVariant();

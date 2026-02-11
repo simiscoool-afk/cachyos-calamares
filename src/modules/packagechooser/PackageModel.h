@@ -25,6 +25,7 @@ struct PackageItem
     Calamares::Locale::TranslatedString name;
     Calamares::Locale::TranslatedString description;
     QPixmap screenshot;
+    QString screenshotPath;
     QStringList packageNames;
     QVariantMap netinstallData;
 
@@ -125,7 +126,8 @@ public:
         NameRole = Qt::DisplayRole,
         DescriptionRole = Qt::UserRole,
         ScreenshotRole,
-        IdRole
+        IdRole,
+        ScreenshotPathRole
     };
 
 private:

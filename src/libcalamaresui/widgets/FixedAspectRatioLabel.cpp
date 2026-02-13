@@ -63,10 +63,7 @@ FixedAspectRatioLabel::updateAnimatedFrame()
         return;
     }
 
-    QPixmap frame = m_movie->currentPixmap();
-    frame.setDevicePixelRatio( devicePixelRatio() );
-    QLabel::setPixmap( frame.scaled(
-        contentsRect().size() * frame.devicePixelRatio(), Qt::KeepAspectRatio, Qt::SmoothTransformation ) );
+    QLabel::setPixmap( m_movie->currentPixmap() );
 }
 
 

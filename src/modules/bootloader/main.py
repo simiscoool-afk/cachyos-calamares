@@ -765,8 +765,20 @@ def update_limine_config(efi_directory, installation_root_path, fw_type):
     with open(config_path, 'w') as config_file:
         config_file.write("timeout: 5\n")
         config_file.write("default_entry: 2\n")
+
         if fw_type == "efi":
             config_file.write("remember_last_entry: yes\n")
+
+        if libcalamares.utils.is_handheld() and os.path.exists("/sys/class/graphics/fb0/rotate"):
+            with open('/sys/class/graphics/fb0/rotate', 'r') as fb:
+                rotation = fb.readline().strip()
+                if rotation == "1":
+                    config_file.write("interface_rotation: 180\n")
+                elif rotation == "2":
+                    config_file.write("interface_rotation: 270\n")
+                elif rotation == "3":
+                    config_file.write("interface_rotation: 90\n")
+
         config_file.write("\n")
 
         # Copy splash logo

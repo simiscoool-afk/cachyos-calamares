@@ -49,7 +49,6 @@ FixedAspectRatioLabel::setAnimatedImage( const QString& path )
         return;
     }
 
-    m_movie->setScaledSize( contentsRect().size() );
     connect( m_movie, &QMovie::frameChanged, this, &FixedAspectRatioLabel::updateAnimatedFrame );
     m_movie->start();
 }
@@ -63,7 +62,10 @@ FixedAspectRatioLabel::updateAnimatedFrame()
         return;
     }
 
-    QLabel::setPixmap( m_movie->currentPixmap() );
+    QPixmap frame = m_movie->currentPixmap();
+    frame.setDevicePixelRatio( devicePixelRatio() );
+    QLabel::setPixmap( frame.scaled(
+        contentsRect().size() * frame.devicePixelRatio(), Qt::KeepAspectRatio, Qt::SmoothTransformation ) );
 }
 
 
@@ -85,7 +87,7 @@ FixedAspectRatioLabel::resizeEvent( QResizeEvent* event )
     Q_UNUSED( event )
     if ( m_movie )
     {
-        m_movie->setScaledSize( contentsRect().size() );
+        updateAnimatedFrame();
     }
     else
     {

@@ -28,6 +28,10 @@ getSubMap( const QVariantMap& map, const QString& key )
 static QString
 resolveScreenshotPath( const QString& path )
 {
+    if ( path.isEmpty() )
+    {
+        return QString();
+    }
     if ( QFileInfo::exists( path ) )
     {
         return path;

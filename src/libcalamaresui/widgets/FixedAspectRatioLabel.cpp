@@ -11,6 +11,8 @@
 #include "FixedAspectRatioLabel.h"
 
 #include <QMovie>
+#include <QHideEvent>
+#include <QShowEvent>
 
 
 FixedAspectRatioLabel::FixedAspectRatioLabel( QWidget* parent )
@@ -94,4 +96,26 @@ FixedAspectRatioLabel::resizeEvent( QResizeEvent* event )
         QLabel::setPixmap( m_pixmap.scaled(
             contentsRect().size() * m_pixmap.devicePixelRatio(), Qt::KeepAspectRatio, Qt::SmoothTransformation ) );
     }
+}
+
+
+void
+FixedAspectRatioLabel::hideEvent( QHideEvent* event )
+{
+    if ( m_movie && m_movie->state() == QMovie::Running )
+    {
+        m_movie->setPaused( true );
+    }
+    QLabel::hideEvent( event );
+}
+
+
+void
+FixedAspectRatioLabel::showEvent( QShowEvent* event )
+{
+    if ( m_movie && m_movie->state() == QMovie::Paused )
+    {
+        m_movie->setPaused( false );
+    }
+    QLabel::showEvent( event );
 }

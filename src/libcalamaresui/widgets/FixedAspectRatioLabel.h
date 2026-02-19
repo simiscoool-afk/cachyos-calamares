@@ -29,6 +29,8 @@ public slots:
     void setPixmap( const QPixmap& pixmap );
     void setAnimatedImage( const QString& path );
     void resizeEvent( QResizeEvent* event ) override;
+    void hideEvent( QHideEvent* event ) override;
+    void showEvent( QShowEvent* event ) override;
 
 private slots:
     void updateAnimatedFrame();

@@ -513,14 +513,29 @@ ChoicePage::applyActionChoice( InstallChoice choice )
                                                                       gs->value( "requiredStorageGiB" ).toDouble() ),
                                                                   m_config->swapChoice() };
 
-        if ( m_core->isDirty() )
+        bool nvmeCheck = PartUtils::deviceMayBenefitFromAdvancedFormat( selectedDevice() );
+
+        if ( m_core->isDirty() || nvmeCheck )
         {
             ScanningDialog::run(
                 QtConcurrent::run(
                     [ = ]
                     {
                         QMutexLocker locker( &m_coreMutex );
-                        m_core->revertDevice( selectedDevice() );
+                        if ( m_core->isDirty() )
+                        {
+                            m_core->revertDevice( selectedDevice() );
+                        }
+                        if ( nvmeCheck )
+                        {
+                            Device* dev = selectedDevice();
+                            if ( dev && PartUtils::applyNvmeOptimalBlockSize( dev->deviceNode() ) )
+                            {
+                                // Sector size changed — re-scan device so kpmcore
+                                // picks up the new logicalSize()
+                                m_core->revertDevice( selectedDevice() );
+                            }
+                        }
                     } ),
                 [ = ]
                 {

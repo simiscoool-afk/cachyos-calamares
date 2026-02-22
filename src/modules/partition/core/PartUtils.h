@@ -138,6 +138,29 @@ QString efiFilesystemMinimumSizeGSKey();
  */
 bool isEfiBootable( const Partition* candidate );
 
+/**
+ * @brief Quick check if a device is NVMe and might benefit from 4K LBA format.
+ *
+ * Checks device node name and current logical sector size via kpmcore.
+ * Does not run any external commands.
+ */
+bool deviceMayBenefitFromAdvancedFormat( const Device* dev );
+
+/**
+ * @brief Attempt to switch an NVMe device to its optimal (largest) LBA format.
+ *
+ * For NVMe devices currently using 512B sectors that support 4096B,
+ * this runs `nvme format` to switch. This is destructive — all data
+ * on the device is erased. Appropriate only in the "erase disk" flow.
+ *
+ * Unmounts any mounted partitions on the device before formatting.
+ * Requires nvme-cli. If not available or no better format exists, returns false.
+ *
+ * @param deviceNode The device path (e.g., "/dev/nvme0n1")
+ * @return true if the LBA format was changed (caller should re-scan the device)
+ */
+bool applyNvmeOptimalBlockSize( const QString& deviceNode );
+
 /** @brief translate @p fsName into a recognized name and type
  *
  * Makes several attempts to translate the string into a

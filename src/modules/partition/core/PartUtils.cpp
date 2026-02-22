@@ -29,8 +29,11 @@
 #include <kpmcore/core/device.h>
 #include <kpmcore/core/partition.h>
 
+#include <QFile>
 #include <QProcess>
+#include <QRegularExpression>
 #include <QTemporaryDir>
+#include <QTextStream>
 
 using Calamares::Partition::isPartitionFreeSpace;
 using Calamares::Partition::isPartitionNew;
@@ -631,6 +634,148 @@ canonicalFilesystemName( const QString& fsName, FileSystem::Type* fsType )
 #endif
     type = FileSystem::Unknown;
     return QStringLiteral( "ext4" );
+}
+
+bool
+deviceMayBenefitFromAdvancedFormat( const Device* dev )
+{
+    if ( !dev )
+        return false;
+
+    const QString node = dev->deviceNode();
+    if ( !node.startsWith( QStringLiteral( "/dev/nvme" ) ) )
+        return false;
+
+    // Already at 4K or higher — nothing to do
+    if ( dev->logicalSize() >= 4096 )
+        return false;
+
+    return true;
+}
+
+bool
+applyNvmeOptimalBlockSize( const QString& deviceNode )
+{
+    if ( !deviceNode.startsWith( QStringLiteral( "/dev/nvme" ) ) )
+    {
+        cDebug() << "applyNvmeOptimalBlockSize called with non-NVMe device" << deviceNode;
+        return false;
+    }
+
+    // Extract the base device name (e.g., "nvme0n1" from "/dev/nvme0n1")
+    const QString devName = deviceNode.mid( 5 ); // skip "/dev/"
+
+    // 1. Double-check current logical block size via sysfs
+    {
+        QFile f( QStringLiteral( "/sys/block/%1/queue/logical_block_size" ).arg( devName ) );
+        if ( f.open( QFile::ReadOnly ) )
+        {
+            bool ok = false;
+            int currentLbs = f.readAll().trimmed().toInt( &ok );
+            if ( ok && currentLbs >= 4096 )
+            {
+                cDebug() << "NVMe" << deviceNode << "already at" << currentLbs << "byte sectors";
+                return false;
+            }
+        }
+    }
+
+    // 2. Query available LBA formats via nvme-cli
+    auto idResult = Calamares::System::runCommand(
+        { "nvme", "id-ns", "-H", deviceNode },
+        std::chrono::seconds( 10 ) );
+
+    if ( idResult.getExitCode() != 0 )
+    {
+        cDebug() << "nvme id-ns failed for" << deviceNode
+                 << "(nvme-cli may not be installed), skipping Advanced Format";
+        return false;
+    }
+
+    // 3. Parse output to find best LBA format with 4K data size and 0 metadata
+    //    Format: "LBA Format  1 : Metadata Size: 0   bytes - Data Size: 4096 bytes - ..."
+    const QString output = idResult.getOutput();
+    QRegularExpression re(
+        QStringLiteral( R"(LBA Format\s+(\d+)\s*:.*Metadata Size:\s*0\s+bytes\s*-\s*Data Size:\s*(\d+)\s*bytes)" ) );
+
+    int bestLbaf = -1;
+    int bestDataSize = 0;
+
+    auto it = re.globalMatch( output );
+    while ( it.hasNext() )
+    {
+        auto match = it.next();
+        int lbaf = match.captured( 1 ).toInt();
+        int dataSize = match.captured( 2 ).toInt();
+
+        if ( dataSize > bestDataSize )
+        {
+            bestDataSize = dataSize;
+            bestLbaf = lbaf;
+        }
+    }
+
+    if ( bestLbaf < 0 || bestDataSize <= 512 )
+    {
+        cDebug() << "No better LBA format found for" << deviceNode;
+        return false;
+    }
+
+    cDebug() << "NVMe" << deviceNode << ": switching to LBA format" << bestLbaf
+             << "with" << bestDataSize << "byte sectors";
+
+    // 4. Unmount any mounted partitions on this device before formatting
+    {
+        QFile mounts( QStringLiteral( "/proc/mounts" ) );
+        if ( mounts.open( QFile::ReadOnly ) )
+        {
+            QTextStream in( &mounts );
+            while ( !in.atEnd() )
+            {
+                QString line = in.readLine();
+                // Match partitions like /dev/nvme0n1p1, /dev/nvme0n1p2, etc.
+                if ( line.startsWith( deviceNode + QStringLiteral( "p" ) ) )
+                {
+                    QString mountedPart = line.section( ' ', 0, 0 );
+                    cDebug() << "Unmounting" << mountedPart << "before NVMe format";
+                    QProcess::execute( QStringLiteral( "umount" ), { mountedPart } );
+                }
+            }
+        }
+        // Also swapoff any swap partitions on this device
+        QFile swaps( QStringLiteral( "/proc/swaps" ) );
+        if ( swaps.open( QFile::ReadOnly ) )
+        {
+            QTextStream swapStream( &swaps );
+            swapStream.readLine(); // skip header
+            while ( !swapStream.atEnd() )
+            {
+                QString line = swapStream.readLine();
+                if ( line.startsWith( deviceNode + QStringLiteral( "p" ) ) )
+                {
+                    QString swapPart = line.section( '\t', 0, 0 ).trimmed();
+                    cDebug() << "Disabling swap on" << swapPart << "before NVMe format";
+                    QProcess::execute( QStringLiteral( "swapoff" ), { swapPart } );
+                }
+            }
+        }
+    }
+
+    // 5. Run nvme format
+    auto fmtResult = Calamares::System::runCommand(
+        { "nvme", "format", deviceNode,
+          QStringLiteral( "--lbaf=%1" ).arg( bestLbaf ),
+          "--force" },
+        std::chrono::seconds( 30 ) );
+
+    if ( fmtResult.getExitCode() != 0 )
+    {
+        cWarning() << "nvme format failed for" << deviceNode << ":" << fmtResult.getOutput();
+        return false;
+    }
+
+    cDebug() << "Successfully formatted" << deviceNode << "with LBA format" << bestLbaf;
+    return true;
 }
 
 }  // namespace PartUtils

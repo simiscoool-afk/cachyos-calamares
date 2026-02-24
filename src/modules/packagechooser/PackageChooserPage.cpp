@@ -64,7 +64,8 @@ PackageChooserPage::currentChanged( const QModelIndex& index )
         ui->productDescription->setText( model->data( index, PackageListModel::DescriptionRole ).toString() );
 
         const QString path = model->data( index, PackageListModel::ScreenshotPathRole ).toString();
-        if ( !path.isEmpty() && path.endsWith( QStringLiteral( ".gif" ), Qt::CaseInsensitive ) )
+        if ( !path.isEmpty() && ( path.endsWith( QStringLiteral( ".gif" ), Qt::CaseInsensitive )
+                                  || path.endsWith( QStringLiteral( ".webp" ), Qt::CaseInsensitive ) ) )
         {
             ui->productScreenshot->setAnimatedImage( path );
         }

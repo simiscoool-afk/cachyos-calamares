@@ -188,6 +188,7 @@
     - ark
     - bluedevil
     - breeze-gtk
+    - cachy-update
     - cachyos-emerald-kde-theme-git
     - cachyos-iridescent-kde
     - cachyos-kde-settings
@@ -233,6 +234,7 @@
   selected: false
   critical: true
   packages:
+    - cachy-update
     - fwupd
     - gdm
     - gedit

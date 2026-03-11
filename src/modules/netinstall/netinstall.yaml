@@ -61,7 +61,7 @@
         selected: true
         packages:
           - ufw
-          - ufw-extra
+          - ufw-extras
       - name: "bluetooth"
         description: "Bluetooth support"
         selected: true

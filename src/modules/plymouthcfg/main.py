@@ -12,7 +12,7 @@
 #   Calamares is Free Software: see the License-Identifier above.
 #
 
-import os
+import subprocess
 
 import libcalamares
 
@@ -23,11 +23,6 @@ _ = gettext.translation("calamares-python",
                         localedir=libcalamares.utils.gettext_path(),
                         languages=libcalamares.utils.gettext_languages(),
                         fallback=True).gettext
-
-# AMD PCI vendor ID
-AMD_VENDOR_ID = "0x1002"
-# PCI display device classes (VGA controller and 3D controller)
-DISPLAY_CLASSES = ("0x030000", "0x030200", "0x038000")
 
 
 def pretty_name():
@@ -46,28 +41,20 @@ def detect_plymouth():
 
 def detect_amdgpu():
     """
-    Checks if an AMD GPU is present by reading PCI device info from sysfs.
+    Checks if an AMD GPU is present using chwd.
 
     @return True if an AMD GPU is detected, False otherwise
     """
-    pci_devices = "/sys/bus/pci/devices"
     try:
-        for device in os.listdir(pci_devices):
-            device_path = os.path.join(pci_devices, device)
-            vendor_path = os.path.join(device_path, "vendor")
-            class_path = os.path.join(device_path, "class")
-            try:
-                with open(vendor_path, "r") as f:
-                    vendor = f.read().strip()
-                with open(class_path, "r") as f:
-                    dev_class = f.read().strip()
-            except OSError:
-                continue
-            if vendor == AMD_VENDOR_ID and dev_class in DISPLAY_CLASSES:
-                debug("Detected AMD GPU: {}".format(device))
-                return True
+        result = subprocess.run(
+            ["chwd", "--check", "amd"],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            debug("Detected AMD GPU via chwd")
+            return True
     except OSError:
-        debug("Could not read PCI devices from sysfs")
+        debug("Could not run chwd for AMD GPU detection")
     return False
 
 

@@ -1,56 +1,13 @@
 /*
  * SPDX-FileCopyrightText: no
  * SPDX-License-Identifier: CC0-1.0
- */
-
-/*
-A branding component can ship a stylesheet (like this one)
-which is applied to parts of the Calamares user-interface.
-In principle, all parts can be styled through CSS.
-Missing parts should be filed as issues.
-
-The IDs are based on the object names in the C++ code.
-You can use the Debug Dialog to find out object names:
-  - Open the debug dialog
-  - Choose tab *Tools*
-  - Click *Widget Tree* button
-The list of object names is printed in the log.
-
-Documentation for styling Qt Widgets through a stylesheet
-can be found at
-    https://doc.qt.io/qt-5/stylesheet-examples.html
-    https://doc.qt.io/qt-5/stylesheet-reference.html
-In Calamares, styling widget classes is supported (e.g.
-using `QComboBox` as a selector).
-
-This example stylesheet has all the actual styling commented out.
-The examples are not exhaustive.
-
-*/
-
-/*** Generic Widgets.
  *
- * You can style **all** widgets of a given class by selecting
- * the class name. Some widgets have specialized sub-selectors.
+ * CachyOS Calamares stylesheet.
+ * Styles remaining widget-based modules (partition, packagechooser, netinstall)
+ * to look consistent alongside QML modules.
  */
 
-/*
-QPushButton { background-color: green; }
-*/
-
-/*** Main application window.
- *
- * The main application window has the sidebar, which in turn
- * contains a logo and a list of items -- note that the list
- * can **not** be styled, since it has its own custom C++
- * delegate code.
- */
-
-/*
-#mainApp { }
-#sidebarApp { }
-#logoApp { }
-*/
+/* --- Base --- */
 
 QWidget {
     font: 13px;
@@ -59,6 +16,47 @@ QWidget {
 QDialogButtonBox {
     dialogbuttonbox-buttons-have-icons: 0;
 }
+
+/* --- Buttons --- */
+
+QPushButton {
+    padding: 6px 16px;
+    border-radius: 4px;
+    border: 1px solid #00CED1;
+    background-color: transparent;
+    min-height: 28px;
+}
+
+QPushButton:hover {
+    background-color: rgba(0, 206, 209, 0.12);
+}
+
+QPushButton:pressed {
+    background-color: rgba(0, 206, 209, 0.25);
+}
+
+QPushButton:disabled {
+    border-color: #555555;
+    color: #888888;
+}
+
+/* Primary action buttons in Calamares dialogs */
+QPushButton:default {
+    background-color: #00CED1;
+    color: #292F34;
+    border: none;
+    font-weight: bold;
+}
+
+QPushButton:default:hover {
+    background-color: #00E5E8;
+}
+
+QPushButton:default:pressed {
+    background-color: #00B5B8;
+}
+
+/* --- Debug button --- */
 
 #debugButton {
     background-color: none;
@@ -69,15 +67,7 @@ QDialogButtonBox {
     border: none;
 }
 
-/*** Welcome module.
- *
- * There are plenty of parts, but the buttons are the most interesting
- * ones (donate, release notes, ...). The little icon image can be
- * styled through *qproperty-icon*, which is a little obscure.
- * URLs can reference the QRC paths of the Calamares application
- * or loaded via plugins or within the filesystem. There is no
- * comprehensive list of available icons, though.
- */
+/* --- Welcome module --- */
 
 #aboutButton {
     background-color: none;
@@ -85,35 +75,172 @@ QDialogButtonBox {
     border: none;
 }
 
-/*
-QPushButton#aboutButton { qproperty-icon: url(:/data/images/release.svg); }
-#donateButton,
-#supportButton,
-#releaseNotesButton,
-#knownIssuesButton { qproperty-icon: url(:/data/images/help.svg); }
-*/
+/* --- Combo boxes --- */
 
-/*** Partitioning module.
- *
- * Many moving parts, which you will need to experiment with.
- */
+QComboBox {
+    padding: 4px 8px;
+    border: 1px solid #888888;
+    border-radius: 4px;
+    min-height: 26px;
+}
 
-/*
-#bootInfoIcon { }
-#bootInfoLable { }
-#deviceInfoIcon { }
-#defineInfoLabel { }
-#scrollAreaWidgetContents { }
-#partitionBarView { }
-*/
+QComboBox:hover {
+    border-color: #00CED1;
+}
 
-/*** Licensing module.
- *
- * The licensing module paints individual widgets for each of
- * the licenses. The item can be collapsed or expanded.
- */
+QComboBox::drop-down {
+    border: none;
+    width: 24px;
+}
 
-/*
-#licenseItem {  }
-#licenseItemFullText {  }
-*/
+/* --- List/Tree views (packagechooser, netinstall) --- */
+
+QListView, QTreeView {
+    border: 1px solid #888888;
+    border-radius: 4px;
+    alternate-background-color: rgba(0, 0, 0, 0.03);
+}
+
+QListView::item, QTreeView::item {
+    padding: 4px;
+    min-height: 24px;
+}
+
+QListView::item:selected, QTreeView::item:selected {
+    background-color: rgba(0, 206, 209, 0.15);
+    color: palette(text);
+}
+
+QListView::item:hover, QTreeView::item:hover {
+    background-color: rgba(0, 206, 209, 0.08);
+}
+
+/* --- Group boxes --- */
+
+QGroupBox {
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    margin-top: 8px;
+    padding-top: 16px;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 6px;
+}
+
+/* --- Line edits --- */
+
+QLineEdit {
+    padding: 4px 8px;
+    border: 1px solid #888888;
+    border-radius: 4px;
+    min-height: 26px;
+}
+
+QLineEdit:focus {
+    border-color: #00CED1;
+}
+
+/* --- Scroll bars --- */
+
+QScrollBar:vertical {
+    width: 8px;
+    background: transparent;
+}
+
+QScrollBar::handle:vertical {
+    background: #888888;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #aaaaaa;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    height: 8px;
+    background: transparent;
+}
+
+QScrollBar::handle:horizontal {
+    background: #888888;
+    border-radius: 4px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #aaaaaa;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* --- Progress bar (partition) --- */
+
+QProgressBar {
+    border: 1px solid #888888;
+    border-radius: 4px;
+    text-align: center;
+    min-height: 20px;
+}
+
+QProgressBar::chunk {
+    background-color: #00CED1;
+    border-radius: 3px;
+}
+
+/* --- Tab widget (partition) --- */
+
+QTabBar::tab {
+    padding: 6px 16px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:selected {
+    border-color: #888888;
+    border-bottom-color: palette(window);
+}
+
+QTabBar::tab:hover:!selected {
+    background-color: rgba(0, 206, 209, 0.08);
+}
+
+/* --- Radio buttons and checkboxes --- */
+
+QRadioButton, QCheckBox {
+    spacing: 6px;
+}
+
+QRadioButton::indicator, QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+/* --- Tooltips --- */
+
+QToolTip {
+    background-color: #292F34;
+    color: #FFFFFF;
+    border: 1px solid #3A4248;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+
+/* --- Splitter handle (packagechooser) --- */
+
+QSplitter::handle {
+    background-color: #cccccc;
+    width: 1px;
+}

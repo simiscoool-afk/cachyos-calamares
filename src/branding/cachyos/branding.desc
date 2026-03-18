@@ -87,7 +87,7 @@ sidebar: qml,bottom
 # In addition, you **may** specify a side, separated by a comma,
 # from the kind. The same sides are valid as for *sidebar*,
 # except the default is *bottom*.
-navigation: widget
+navigation: qml
 
 
 ### STRINGS, IMAGES AND COLORS

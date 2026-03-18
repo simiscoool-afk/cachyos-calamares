@@ -2,19 +2,29 @@
  * SPDX-FileCopyrightText: no
  * SPDX-License-Identifier: CC0-1.0
  *
- * CachyOS Calamares stylesheet.
- * Styles remaining widget-based modules (partition, packagechooser, netinstall)
- * to look consistent alongside QML modules.
+ * CachyOS Calamares dark theme stylesheet.
+ * Dark background with cyan (#00CED1) accents throughout.
  */
 
-/* --- Base --- */
+/* --- Base dark theme --- */
 
 QWidget {
     font: 13px;
+    background-color: #1E2328;
+    color: #E0E0E0;
 }
 
 QDialogButtonBox {
     dialogbuttonbox-buttons-have-icons: 0;
+}
+
+/* Main content area */
+#mainApp {
+    background-color: #1E2328;
+}
+
+QLabel {
+    background-color: transparent;
 }
 
 /* --- Buttons --- */
@@ -24,11 +34,12 @@ QPushButton {
     border-radius: 4px;
     border: 1px solid #00CED1;
     background-color: transparent;
+    color: #E0E0E0;
     min-height: 28px;
 }
 
 QPushButton:hover {
-    background-color: rgba(0, 206, 209, 0.12);
+    background-color: rgba(0, 206, 209, 0.15);
 }
 
 QPushButton:pressed {
@@ -36,14 +47,13 @@ QPushButton:pressed {
 }
 
 QPushButton:disabled {
-    border-color: #555555;
-    color: #888888;
+    border-color: #3A4248;
+    color: #666666;
 }
 
-/* Primary action buttons in Calamares dialogs */
 QPushButton:default {
     background-color: #00CED1;
-    color: #292F34;
+    color: #1E2328;
     border: none;
     font-weight: bold;
 }
@@ -79,8 +89,10 @@ QPushButton:default:pressed {
 
 QComboBox {
     padding: 4px 8px;
-    border: 1px solid #888888;
+    border: 1px solid #3A4248;
     border-radius: 4px;
+    background-color: #2D3339;
+    color: #E0E0E0;
     min-height: 26px;
 }
 
@@ -93,12 +105,22 @@ QComboBox::drop-down {
     width: 24px;
 }
 
+QComboBox QAbstractItemView {
+    background-color: #2D3339;
+    color: #E0E0E0;
+    border: 1px solid #3A4248;
+    selection-background-color: rgba(0, 206, 209, 0.25);
+    selection-color: #FFFFFF;
+}
+
 /* --- List/Tree views (packagechooser, netinstall) --- */
 
 QListView, QTreeView {
-    border: 1px solid #888888;
+    background-color: #2D3339;
+    alternate-background-color: #262C31;
+    border: 1px solid #3A4248;
     border-radius: 4px;
-    alternate-background-color: rgba(0, 0, 0, 0.03);
+    color: #E0E0E0;
 }
 
 QListView::item, QTreeView::item {
@@ -107,40 +129,73 @@ QListView::item, QTreeView::item {
 }
 
 QListView::item:selected, QTreeView::item:selected {
-    background-color: rgba(0, 206, 209, 0.15);
-    color: palette(text);
+    background-color: rgba(0, 206, 209, 0.2);
+    color: #FFFFFF;
 }
 
 QListView::item:hover, QTreeView::item:hover {
-    background-color: rgba(0, 206, 209, 0.08);
+    background-color: rgba(0, 206, 209, 0.1);
+}
+
+QHeaderView {
+    background-color: #292F34;
+    color: #E0E0E0;
+}
+
+QHeaderView::section {
+    background-color: #292F34;
+    color: #E0E0E0;
+    border: none;
+    border-right: 1px solid #3A4248;
+    border-bottom: 1px solid #3A4248;
+    padding: 4px 8px;
+    font-weight: bold;
 }
 
 /* --- Group boxes --- */
 
 QGroupBox {
-    border: 1px solid #cccccc;
+    border: 1px solid #3A4248;
     border-radius: 4px;
     margin-top: 8px;
     padding-top: 16px;
     font-weight: bold;
+    color: #E0E0E0;
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
     subcontrol-position: top left;
     padding: 0 6px;
+    color: #00CED1;
 }
 
 /* --- Line edits --- */
 
 QLineEdit {
     padding: 4px 8px;
-    border: 1px solid #888888;
+    border: 1px solid #3A4248;
     border-radius: 4px;
+    background-color: #2D3339;
+    color: #E0E0E0;
     min-height: 26px;
 }
 
 QLineEdit:focus {
+    border-color: #00CED1;
+}
+
+/* --- Spin boxes --- */
+
+QSpinBox, QDoubleSpinBox {
+    padding: 4px 8px;
+    border: 1px solid #3A4248;
+    border-radius: 4px;
+    background-color: #2D3339;
+    color: #E0E0E0;
+}
+
+QSpinBox:focus, QDoubleSpinBox:focus {
     border-color: #00CED1;
 }
 
@@ -152,17 +207,21 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle:vertical {
-    background: #888888;
+    background: #555555;
     border-radius: 4px;
     min-height: 20px;
 }
 
 QScrollBar::handle:vertical:hover {
-    background: #aaaaaa;
+    background: #777777;
 }
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: transparent;
 }
 
 QScrollBar:horizontal {
@@ -171,24 +230,30 @@ QScrollBar:horizontal {
 }
 
 QScrollBar::handle:horizontal {
-    background: #888888;
+    background: #555555;
     border-radius: 4px;
     min-width: 20px;
 }
 
 QScrollBar::handle:horizontal:hover {
-    background: #aaaaaa;
+    background: #777777;
 }
 
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
     width: 0px;
 }
 
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: transparent;
+}
+
 /* --- Progress bar (partition) --- */
 
 QProgressBar {
-    border: 1px solid #888888;
+    border: 1px solid #3A4248;
     border-radius: 4px;
+    background-color: #2D3339;
+    color: #E0E0E0;
     text-align: center;
     min-height: 20px;
 }
@@ -200,32 +265,48 @@ QProgressBar::chunk {
 
 /* --- Tab widget (partition) --- */
 
+QTabWidget::pane {
+    border: 1px solid #3A4248;
+    background-color: #1E2328;
+}
+
 QTabBar::tab {
     padding: 6px 16px;
-    border: 1px solid transparent;
+    background-color: #292F34;
+    border: 1px solid #3A4248;
     border-bottom: none;
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
+    color: #E0E0E0;
 }
 
 QTabBar::tab:selected {
-    border-color: #888888;
-    border-bottom-color: palette(window);
+    background-color: #1E2328;
+    border-bottom-color: #1E2328;
+    color: #00CED1;
 }
 
 QTabBar::tab:hover:!selected {
-    background-color: rgba(0, 206, 209, 0.08);
+    background-color: #2D3339;
 }
 
 /* --- Radio buttons and checkboxes --- */
 
 QRadioButton, QCheckBox {
     spacing: 6px;
+    background-color: transparent;
+    color: #E0E0E0;
 }
 
 QRadioButton::indicator, QCheckBox::indicator {
     width: 16px;
     height: 16px;
+}
+
+/* --- Frames --- */
+
+QFrame {
+    background-color: transparent;
 }
 
 /* --- Tooltips --- */
@@ -238,9 +319,59 @@ QToolTip {
     padding: 4px 8px;
 }
 
-/* --- Splitter handle (packagechooser) --- */
+/* --- Splitter handle --- */
 
 QSplitter::handle {
-    background-color: #cccccc;
+    background-color: #3A4248;
     width: 1px;
+}
+
+/* --- Menus --- */
+
+QMenu {
+    background-color: #2D3339;
+    color: #E0E0E0;
+    border: 1px solid #3A4248;
+}
+
+QMenu::item:selected {
+    background-color: rgba(0, 206, 209, 0.2);
+    color: #FFFFFF;
+}
+
+/* --- Scroll area --- */
+
+QScrollArea {
+    background-color: transparent;
+    border: none;
+}
+
+/* --- Text browser/edit (used in some modules) --- */
+
+QTextBrowser, QTextEdit, QPlainTextEdit {
+    background-color: #2D3339;
+    color: #E0E0E0;
+    border: 1px solid #3A4248;
+    border-radius: 4px;
+}
+
+/* --- Slider --- */
+
+QSlider::groove:horizontal {
+    height: 4px;
+    background-color: #3A4248;
+    border-radius: 2px;
+}
+
+QSlider::handle:horizontal {
+    background-color: #00CED1;
+    width: 16px;
+    height: 16px;
+    margin: -6px 0;
+    border-radius: 8px;
+}
+
+QSlider::sub-page:horizontal {
+    background-color: #00CED1;
+    border-radius: 2px;
 }

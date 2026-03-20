@@ -22,13 +22,13 @@ Item {
     width: 800 //parent.width
     height: 600
 
-    readonly property color backgroundColor: "#E6E9EA" //Kirigami.Theme.backgroundColor
-    readonly property color listBackgroundColor: "white"
-    readonly property color textFieldColor: "#121212"
-    readonly property color textFieldBackgroundColor: "#F8F8F8"
-    readonly property color textColor: Kirigami.Theme.textColor
-    readonly property color highlightedTextColor: Kirigami.Theme.highlightedTextColor
-    readonly property color highlightColor: Kirigami.Theme.highlightColor
+    readonly property color backgroundColor: "#1E2328"
+    readonly property color listBackgroundColor: "#2D3339"
+    readonly property color textFieldColor: "#E0E0E0"
+    readonly property color textFieldBackgroundColor: "#2D3339"
+    readonly property color textColor: "#E0E0E0"
+    readonly property color highlightedTextColor: "#FFFFFF"
+    readonly property color highlightColor: "#00CED1"
 
     property var langXml: ["de", "en", "es", "fr", "ru",]
     property var arXml: ["Arabic"]
@@ -97,11 +97,11 @@ Item {
                             horizontalAlignment: Text.AlignHCenter
                             width: parent.width
                             height: 24
-                            color: highlighted ? "#eff0f1" : "#1F1F1F"
+                            color: highlighted ? "#1E2328" : "#E0E0E0"
                             text: model.label
                             background: Rectangle {
 
-                                color: highlighted || hovered ? "#3498DB" : "#ffffff"
+                                color: highlighted || hovered ? "#00CED1" : "#2D3339"
                                 opacity: highlighted || hovered ? 0.5 : 0.9
                             }
 
@@ -128,7 +128,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             width: parent.width / 1.5
             height: 36
-            color: mouseBar.containsMouse ? "#eff0f1" : "transparent";
+            color: mouseBar.containsMouse ? "#3A4248" : "transparent";
 
             MouseArea {
                 id: mouseBar

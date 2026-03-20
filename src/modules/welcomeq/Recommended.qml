@@ -62,7 +62,7 @@ Rectangle {
                         implicitWidth: 640
                         implicitHeight: 35
                         border.color: satisfied ? "#228b22" : "#ffa411"
-                        color: satisfied ? "#f0fff0" : "#ffefd5"
+                        color: satisfied ? "#1A3329" : "#3D3319"
 
                         Image {
                             anchors.verticalCenter: parent.verticalCenter
@@ -73,6 +73,7 @@ Rectangle {
 
                         Text {
                             text: satisfied ? details : negatedText
+                            color: "#E0E0E0"
                             anchors.centerIn: parent
                             font.pointSize: 11
                         }

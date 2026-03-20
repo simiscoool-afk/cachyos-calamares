@@ -21,11 +21,11 @@ Page {
     width: parent.width
     height: parent.height
 
-    readonly property color headerBackgroundColor: Kirigami.Theme.alternateBackgroundColor //"#eff0f1"
-    readonly property color backgroundLighterColor: "#ffffff"
-    readonly property color highlightColor: Kirigami.Theme.highlightColor //"#3498DB"
-    readonly property color textColor: Kirigami.Theme.textColor //"#1F1F1F"
-    readonly property color highlightedTextColor: Kirigami.Theme.highlightedTextColor
+    readonly property color headerBackgroundColor: "#292F34"
+    readonly property color backgroundLighterColor: "#2D3339"
+    readonly property color highlightColor: "#00CED1"
+    readonly property color textColor: "#E0E0E0"
+    readonly property color highlightedTextColor: "#FFFFFF"
 
     function onActivate() {
         /* If you want the map to follow Calamares's GeoIP
@@ -135,7 +135,7 @@ Page {
                     header: Rectangle {
                         width: parent.width
                         height: 100
-                        color: "#eff0f1" //headerBackgroundColor
+                        color: headerBackgroundColor
                         Text {
                             anchors.fill: parent
                             wrapMode: Text.WordWrap
@@ -158,7 +158,7 @@ Page {
                             horizontalAlignment: Text.AlignHCenter
                             width: parent.width
                             height: 24
-                            color: highlighted ? "#eff0f1" : "#1F1F1F" // headerBackgroundColor : textColor
+                            color: highlighted ? "#1E2328" : "#E0E0E0"
                             text: modelData
                             background: Rectangle {
 
@@ -206,7 +206,7 @@ Page {
                     header: Rectangle {
                         width: parent.width
                         height: 100
-                        color: "#eff0f1" // headerBackgroundColor
+                        color: headerBackgroundColor
                         Text {
                             anchors.fill: parent
                             wrapMode: Text.WordWrap
@@ -228,7 +228,7 @@ Page {
                             horizontalAlignment: Text.AlignHCenter
                             width: parent.width
                             height: 24
-                            color: highlighted ? "#eff0f1" : "#1F1F1F" // headerBackgroundColor : textColor
+                            color: highlighted ? "#1E2328" : "#E0E0E0"
                             text: modelData
                             background: Rectangle {
 

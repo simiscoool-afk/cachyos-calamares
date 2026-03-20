@@ -20,6 +20,7 @@ import QtQuick.Window
 Page {
 
     id: finished
+    background: Rectangle { color: "#1E2328" }
 
     width: parent.width
     height: parent.height
@@ -30,7 +31,7 @@ Page {
         id: header
         Layout.fillWidth: true
         horizontalAlignment: Qt.AlignHCenter
-        color: Kirigami.Theme.textColor
+        color: "#E0E0E0"
         level: 1
         text: qsTr("Installation Completed", "@title")
 
@@ -38,6 +39,7 @@ Page {
             anchors.top: header.bottom
             anchors.horizontalCenter: parent.horizontalCenter
             horizontalAlignment: Text.AlignHCenter
+            color: "#E0E0E0"
             font.pointSize: 12
             text: qsTr("%1 has been installed on your computer.<br/>
             You may now restart into your new system, or continue using the Live environment.", "@info, %1 is the product name")
@@ -86,6 +88,7 @@ Page {
             anchors.centerIn: parent
             anchors.top: parent.top
             horizontalAlignment: Text.AlignHCenter
+            color: "#888888"
             text: qsTr("<p>A full log of the install is available as installation.log in the home directory of the Live user.<br/>
             This log is copied to /var/log/installation.log of the target system.</p>", "@info")
         }

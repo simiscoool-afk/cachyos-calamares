@@ -23,6 +23,7 @@ import Qt5Compat.GraphicalEffects
 Page
 {
     id: welcome
+    background: Rectangle { color: "#1E2328" }
 
     header: Item {
         width: parent.width
@@ -33,6 +34,7 @@ Page
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
             horizontalAlignment: Text.AlignHCenter
+            color: "#E0E0E0"
             padding: 20
             // In QML, QString::arg() only takes one argument
             text: qsTr("<h3>Welcome to the %1 <quote>%2</quote> installer</h3>
@@ -124,6 +126,7 @@ Page
                 width: parent.width
                 Layout.fillWidth: true
                 focus: true
+                color: "transparent"
 
                 Loader {
                     id: imLoader

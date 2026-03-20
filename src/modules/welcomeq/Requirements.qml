@@ -68,7 +68,7 @@ Rectangle {
                         // - otherwise if mandatory, then red / stop
                         // - otherwise, then yellow / warning
                         border.color: satisfied ? "#228b22" : (mandatory ? "#ff0000" : "#ffa411")
-                        color: satisfied ? "#f0fff0" : (mandatory ? "#ffc0cb" : "#ffefd5")
+                        color: satisfied ? "#1A3329" : (mandatory ? "#3D1F23" : "#3D3319")
 
                         Image {
                             anchors.verticalCenter: parent.verticalCenter
@@ -80,6 +80,7 @@ Rectangle {
                         Text {
                             id: message
                             text: satisfied ? details : negatedText
+                            color: "#E0E0E0"
                             anchors.centerIn: parent
                             font.pointSize: 11
                         }

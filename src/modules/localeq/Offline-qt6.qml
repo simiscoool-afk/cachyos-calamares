@@ -25,11 +25,11 @@ Page {
     property string currentRegion
     property string currentZone
 
-    readonly property color backgroundColor: Kirigami.Theme.backgroundColor //"#F5F5F5"
-    readonly property color backgroundLighterColor: "#ffffff"
-    readonly property color highlightColor: Kirigami.Theme.highlightColor //"#3498DB"
-    readonly property color textColor: Kirigami.Theme.textColor
-    readonly property color highlightedTextColor: Kirigami.Theme.highlightedTextColor
+    readonly property color backgroundColor: "#1E2328"
+    readonly property color backgroundLighterColor: "#2D3339"
+    readonly property color highlightColor: "#00CED1"
+    readonly property color textColor: "#E0E0E0"
+    readonly property color highlightedTextColor: "#FFFFFF"
 
      StackView {
         id: stack
@@ -203,6 +203,7 @@ Page {
         height: 60
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
+        color: "#1E2328"
 
         Item {
 
@@ -236,7 +237,7 @@ Page {
             width: parent.width
             wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignHCenter
-            Kirigami.Theme.backgroundColor: Kirigami.Theme.backgroundColor
+            color: "#E0E0E0"
             text: qsTr("You can fine-tune language and locale settings below", "@label")
         }
     }

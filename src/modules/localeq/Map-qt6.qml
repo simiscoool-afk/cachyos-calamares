@@ -243,6 +243,7 @@ Column {
         width: parent.width
         height: 100
         anchors.horizontalCenter: parent.horizontalCenter
+        color: "#1E2328"
 
         Item {
             id: location
@@ -278,7 +279,7 @@ Column {
             width: parent.width
             wrapMode: Text.WordWrap
             horizontalAlignment: Text.AlignHCenter
-            Kirigami.Theme.backgroundColor: Kirigami.Theme.backgroundColor
+            color: "#E0E0E0"
             text: qsTr("Please select your preferred location on the map so the installer can suggest the locale
             and timezone settings for you. You can fine-tune the suggested settings below. Search the map by dragging
             to move and using the +/- buttons to zoom in/out or use mouse scrolling for zooming.", "@label")

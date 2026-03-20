@@ -20,8 +20,8 @@ Kirigami.ScrollablePage {
     width: 860 //parent.width
     height: 640 //parent.height
 
-    Kirigami.Theme.backgroundColor: "#EFF0F1"
-    Kirigami.Theme.textColor: "#1F1F1F"
+    Kirigami.Theme.backgroundColor: "#1E2328"
+    Kirigami.Theme.textColor: "#E0E0E0"
 
     header: Kirigami.Heading {
         Layout.fillWidth: true
@@ -42,7 +42,7 @@ Kirigami.ScrollablePage {
 
             Rectangle {
                 id: rect
-                border.color: "#BDC3C7"
+                border.color: "#3A4248"
                 width: parent.width - 80
                 implicitHeight: message.implicitHeight + title.implicitHeight + 20
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -87,7 +87,7 @@ Kirigami.ScrollablePage {
                                 Rectangle {
                                     height: 2
                                     width: 200
-                                    border.color: "#BDC3C7"
+                                    border.color: "#3A4248"
                                 }
                                 Label {
                                     id: message

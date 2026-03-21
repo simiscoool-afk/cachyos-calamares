@@ -177,6 +177,8 @@ private:
     bool m_enableEncryptionWidget = false;
     bool m_preCheckActivated = false;
 
+    QString m_eraseHomePartitionPath;
+
     QMutex m_coreMutex;
 };
 

@@ -513,6 +513,43 @@ ChoicePage::applyActionChoice( InstallChoice choice )
                                                                       gs->value( "requiredStorageGiB" ).toDouble() ),
                                                                   m_config->swapChoice() };
 
+        // Look for an existing /home partition on a different device
+        m_eraseHomePartitionPath.clear();
+        const QString selectedDeviceNode = selectedDevice()->deviceNode();
+        for ( const OsproberEntry& osproberEntry : m_core->osproberEntries() )
+        {
+            if ( !osproberEntry.homePath.isEmpty() && !osproberEntry.homePath.startsWith( selectedDeviceNode ) )
+            {
+                m_eraseHomePartitionPath = osproberEntry.homePath;
+                break;
+            }
+        }
+
+        auto applyEraseHomeReuse = [ this ]
+        {
+            if ( !m_eraseHomePartitionPath.isEmpty() && m_reuseHomeCheckBox->isChecked() )
+            {
+                // Find the home partition across all devices and set its mount point
+                DeviceModel* devModel = m_core->deviceModel();
+                for ( int i = 0; i < devModel->rowCount(); ++i )
+                {
+                    Device* dev = devModel->deviceForIndex( devModel->index( i ) );
+                    Partition* homePart = findPartitionByPath( { dev }, m_eraseHomePartitionPath );
+                    if ( homePart )
+                    {
+                        PartitionInfo::setMountPoint( homePart, "/home" );
+                        PartitionInfo::setFormat( homePart, false );
+                        Calamares::JobQueue::instance()->globalStorage()->insert( "reuseHome", true );
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                Calamares::JobQueue::instance()->globalStorage()->insert( "reuseHome", false );
+            }
+        };
+
         if ( m_core->isDirty() )
         {
             ScanningDialog::run(
@@ -525,6 +562,7 @@ ChoicePage::applyActionChoice( InstallChoice choice )
                 [ = ]
                 {
                     PartitionActions::doAutopartition( m_core, selectedDevice(), options );
+                    applyEraseHomeReuse();
                     Q_EMIT deviceChosen();
                 },
                 this );
@@ -532,6 +570,7 @@ ChoicePage::applyActionChoice( InstallChoice choice )
         else
         {
             PartitionActions::doAutopartition( m_core, selectedDevice(), options );
+            applyEraseHomeReuse();
             Q_EMIT deviceChosen();
         }
     }
@@ -685,6 +724,12 @@ ChoicePage::onHomeCheckBoxStateChanged()
          && m_beforePartitionBarsView->selectionModel()->currentIndex().isValid() )
     {
         doReplaceSelectedPartition( m_beforePartitionBarsView->selectionModel()->currentIndex() );
+    }
+    else if ( m_config->installChoice() == InstallChoice::Erase
+              && !m_eraseHomePartitionPath.isEmpty() )
+    {
+        // Re-apply the erase action to pick up the home reuse change
+        applyActionChoice( InstallChoice::Erase );
     }
 }
 
@@ -1161,6 +1206,15 @@ ChoicePage::updateActionChoicePreview( InstallChoice choice )
         if ( m_config->installChoice() == InstallChoice::Erase )
         {
             m_selectLabel->hide();
+
+            // Show the reuse home checkbox if a /home partition was detected on another device
+            if ( !m_eraseHomePartitionPath.isEmpty() )
+            {
+                m_reuseHomeCheckBox->setVisible( true );
+                m_reuseHomeCheckBox->setText( tr( "Reuse %1 as home partition for %2", "@label" )
+                                                  .arg( m_eraseHomePartitionPath )
+                                                  .arg( Calamares::Branding::instance()->shortProductName() ) );
+            }
         }
         else
         {

@@ -912,6 +912,7 @@ ChoicePage::doReplaceSelectedPartition( const QModelIndex& current )
                         if ( homePartition && doReuseHomePartition )
                         {
                             PartitionInfo::setMountPoint( homePartition, "/home" );
+                            PartitionInfo::setFormat( homePartition, false );
                             gs->insert( "reuseHome", true );
                         }
                         else

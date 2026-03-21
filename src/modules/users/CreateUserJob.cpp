@@ -132,9 +132,11 @@ CreateUserJob::exec()
             QString backupDirName = "dotfiles_backup_" + QDateTime::currentDateTime().toString( "yyyy-MM-dd_HH-mm-ss" );
             existingHome.mkdir( backupDirName );
 
-            // We need the extra `sh -c` here to ensure that we can expand the shell globs
+            // Use find to avoid the shell glob issue where .* matches . and ..
             Calamares::System::instance()->targetEnvCall(
-                { "sh", "-c", "mv -f " + shellFriendlyHome + "/.* " + shellFriendlyHome + "/" + backupDirName } );
+                { "find", shellFriendlyHome, "-maxdepth", "1", "-name", ".*",
+                  "!", "-name", ".", "!", "-name", "..",
+                  "-exec", "mv", "-f", "{}", shellFriendlyHome + "/" + backupDirName + "/", "+" } );
         }
     }
 

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Only proceed if root is on btrfs
+FSTYPE=$(findmnt -n -o FSTYPE /)
+if [ "$FSTYPE" != "btrfs" ]; then
+    exit 0
+fi
+
+# Only proceed if snapper root config exists
+if [ ! -f /etc/snapper/configs/root ]; then
+    exit 0
+fi
+
+# Create installation snapshot with no cleanup algorithm so snapper
+# will never automatically delete it — used as a restore point.
+snapper --no-dbus -c root create \
+    --cleanup-algorithm "" \
+    --description "Fresh CachyOS Installation" \
+    --userdata "important=yes"

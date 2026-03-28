@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 
-if pacman -Qq limine 2>/dev/null; then
+if pacman -Qq systemd-ukify 2>/dev/null; then
+    echo "UKI bootloader detected, verifying kernel-install configuration"
+
+    # Verify UKI images were generated
+    if ls /boot/EFI/Linux/*.efi 1>/dev/null 2>&1; then
+        echo "UKI images found in /boot/EFI/Linux/"
+    else
+        echo "WARNING: No UKI images found. Running kernel-install manually."
+        for kver in /usr/lib/modules/*/vmlinuz; do
+            kver_dir=$(dirname "$kver")
+            kver_name=$(basename "$kver_dir")
+            kernel-install add "$kver_name" "$kver"
+        done
+    fi
+elif pacman -Qq limine 2>/dev/null; then
     limine_snapper_config="/etc/limine-snapper-sync.conf"
 
     if [ -e "$limine_snapper_config" ]; then

@@ -1049,6 +1049,208 @@ def install_refind(efi_directory):
     update_refind_config(efi_directory, installation_root_path)
 
 
+def get_esp_device_info(efi_directory):
+    """
+    Returns a tuple (disk, partition_number) for the ESP using sysfs.
+    Avoids dependency on grub-probe.
+
+    :param efi_directory: The mount point of the ESP (e.g., "/boot")
+    :return: A tuple of (disk_path, partition_number_string) e.g. ("/dev/sda", "1")
+    """
+    esp_parts = efi_partitions(efi_directory)
+    if not esp_parts:
+        raise ValueError("No EFI system partition found mounted at {}".format(efi_directory))
+
+    esp_device = esp_parts[0]["device"]
+    disk, partition_number = get_partition_drive(esp_device)
+
+    if partition_number == 0:
+        raise ValueError("Could not determine partition number for ESP device {}".format(esp_device))
+
+    return disk, str(partition_number)
+
+
+def install_uki(efi_directory):
+    """
+    Installs Unified Kernel Image (UKI) boot configuration.
+
+    Boot chain: firmware -> shim -> systemd-boot -> UKI (auto-discovered)
+
+    Sets up kernel-install with layout=uki so systemd-ukify generates
+    UKI images. Installs systemd-boot as the BLS Type #2 discovery layer.
+    Configures shim-signed for Secure Boot with automatic MOK enrollment.
+
+    :param efi_directory: The EFI system partition mount point (e.g., "/boot")
+    """
+    libcalamares.utils.debug("Bootloader: uki")
+
+    installation_root_path = libcalamares.globalstorage.value("rootMountPoint")
+    install_efi_directory = installation_root_path + efi_directory
+    uuid = get_uuid()
+
+    # --- Step 1: Write /etc/kernel/cmdline ---
+    kernel_params = " ".join(get_kernel_params(uuid))
+    kernel_config_path = os.path.join(installation_root_path, "etc", "kernel")
+    os.makedirs(kernel_config_path, exist_ok=True)
+    with open(os.path.join(kernel_config_path, "cmdline"), "w") as cmdline_file:
+        cmdline_file.write(kernel_params)
+
+    # --- Step 2: Write /etc/kernel/install.conf ---
+    install_conf_path = os.path.join(kernel_config_path, "install.conf")
+    with open(install_conf_path, "w") as install_conf:
+        install_conf.write("layout=uki\n")
+        install_conf.write("initrd_generator=mkinitcpio\n")
+        install_conf.write("uki_generator=ukify\n")
+
+    # --- Step 3: Create EFI/Linux/ directory on ESP ---
+    efi_linux_dir = os.path.join(install_efi_directory, "EFI", "Linux")
+    os.makedirs(efi_linux_dir, exist_ok=True)
+
+    # --- Step 4: Generate MOK signing keys ---
+    mok_dir = os.path.join(installation_root_path, "etc", "kernel", "uki-certs")
+    os.makedirs(mok_dir, exist_ok=True)
+
+    mok_key = os.path.join(mok_dir, "MOK.key")
+    mok_crt = os.path.join(mok_dir, "MOK.crt")
+    mok_cer = os.path.join(mok_dir, "MOK.cer")
+
+    subprocess.check_call([
+        "openssl", "req", "-new", "-x509",
+        "-newkey", "rsa:2048",
+        "-keyout", mok_key,
+        "-out", mok_crt,
+        "-nodes", "-days", "3650",
+        "-subj", "/CN=CachyOS UKI Signing Key/",
+        "-outform", "PEM"
+    ])
+
+    # DER-encoded version for mokutil enrollment
+    subprocess.check_call([
+        "openssl", "x509",
+        "-in", mok_crt,
+        "-out", mok_cer,
+        "-outform", "DER"
+    ])
+
+    os.chmod(mok_key, 0o600)
+
+    # --- Step 5: Write /etc/kernel/uki.conf ---
+    uki_conf_path = os.path.join(kernel_config_path, "uki.conf")
+    with open(uki_conf_path, "w") as uki_conf:
+        uki_conf.write("[UKI]\n")
+        uki_conf.write("SecureBootSigningTool=/usr/bin/sbsign\n")
+        uki_conf.write("SecureBootPrivateKey=/etc/kernel/uki-certs/MOK.key\n")
+        uki_conf.write("SecureBootCertificate=/etc/kernel/uki-certs/MOK.crt\n")
+
+    # --- Step 6: Install systemd-boot as BLS discovery layer ---
+    subprocess.check_call([
+        "bootctl",
+        "--path={!s}".format(install_efi_directory),
+        "install"
+    ], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+
+    # Write loader.conf for systemd-boot
+    loader_path = os.path.join(install_efi_directory, "loader", "loader.conf")
+    create_loader(loader_path, installation_root_path)
+
+    # --- Step 7: Run kernel-install for each kernel ---
+    machine_id = get_machine_id(installation_root_path)
+    machine_dir = os.path.join(install_efi_directory, machine_id)
+    os.makedirs(machine_dir, exist_ok=True)
+
+    for (kernel, kernel_type, kernel_version) in get_kernels(installation_root_path):
+        libcalamares.utils.debug(f"UKI: Installing kernel {kernel_version}")
+        libcalamares.utils.target_env_process_output([
+            "kernel-install", "add",
+            kernel_version,
+            os.path.join("/", kernel)
+        ])
+
+    # --- Step 8: Sign systemd-boot with MOK key ---
+    # shim chainloads to systemd-boot, which must be signed with our MOK
+    efi_bootloader_id = efi_label(efi_directory)
+    efi_vendor_dir = os.path.join(install_efi_directory, "EFI", efi_bootloader_id)
+
+    bitness = efi_word_size()
+    if bitness == "64":
+        shim_binary = "shimx64.efi"
+        systemd_boot_binary = "systemd-bootx64.efi"
+        fallback_name = "BOOTX64.EFI"
+    elif bitness == "32":
+        shim_binary = "shimia32.efi"
+        systemd_boot_binary = "systemd-bootia32.efi"
+        fallback_name = "BOOTIA32.EFI"
+    else:
+        libcalamares.utils.warning(f"Unknown EFI word size: {bitness}")
+        return
+
+    # Sign systemd-boot binary with MOK key
+    systemd_boot_path = os.path.join(efi_vendor_dir, systemd_boot_binary)
+    if os.path.exists(systemd_boot_path):
+        subprocess.check_call([
+            "sbsign",
+            "--key", mok_key,
+            "--cert", mok_crt,
+            "--output", systemd_boot_path,
+            systemd_boot_path
+        ])
+    else:
+        # bootctl may place it at EFI/systemd/ or EFI/BOOT/
+        systemd_dir = os.path.join(install_efi_directory, "EFI", "systemd")
+        alt_path = os.path.join(systemd_dir, systemd_boot_binary)
+        if os.path.exists(alt_path):
+            subprocess.check_call([
+                "sbsign",
+                "--key", mok_key,
+                "--cert", mok_crt,
+                "--output", alt_path,
+                alt_path
+            ])
+        else:
+            libcalamares.utils.warning(
+                f"systemd-boot binary not found for signing at {systemd_boot_path} or {alt_path}")
+
+    # --- Step 9: Set up shim ---
+    shim_source_dir = libcalamares.job.configuration.get(
+        "ukiShimPath", "/usr/share/shim-signed")
+    shim_source = os.path.join(installation_root_path, shim_source_dir.lstrip("/"), shim_binary)
+
+    # Copy shim as EFI fallback bootloader
+    efi_boot_dir = os.path.join(install_efi_directory, "EFI", "BOOT")
+    os.makedirs(efi_boot_dir, exist_ok=True)
+
+    if os.path.exists(shim_source):
+        shutil.copy2(shim_source, os.path.join(efi_boot_dir, fallback_name))
+        # Also copy shim to vendor directory for efibootmgr entry
+        os.makedirs(efi_vendor_dir, exist_ok=True)
+        shutil.copy2(shim_source, os.path.join(efi_vendor_dir, shim_binary))
+    else:
+        libcalamares.utils.warning(f"Shim binary not found at {shim_source}")
+
+    # --- Step 10: Enroll MOK key ---
+    # Run on host (not chroot) since mokutil needs EFI runtime variables.
+    subprocess.check_call([
+        "mokutil", "--import", mok_cer, "--root-pw"
+    ])
+
+    # --- Step 11: Register EFI boot entry ---
+    disk, partition_number = get_esp_device_info(efi_directory)
+    boot_mgr = libcalamares.job.configuration["efiBootMgr"]
+    efi_loader_path = "\\EFI\\{}\\{}".format(efi_bootloader_id, shim_binary)
+
+    subprocess.check_call([
+        boot_mgr,
+        "-c",
+        "-w",
+        "-L", efi_bootloader_id,
+        "-d", disk,
+        "-p", partition_number,
+        "-l", efi_loader_path
+    ])
+
+    efi_boot_next()
+
+
 def prepare_bootloader(fw_type, install_hybrid_grub):
     """
     Prepares bootloader.
@@ -1098,6 +1300,8 @@ def prepare_bootloader(fw_type, install_hybrid_grub):
         install_secureboot(efi_directory)
     elif (efi_boot_loader == "refind" or efi_boot_loader == "refind-ai") and fw_type == "efi":
         install_refind(efi_directory)
+    elif efi_boot_loader == "uki" and fw_type == "efi":
+        install_uki(efi_directory)
     elif efi_boot_loader == "limine":
         install_limine(efi_directory, fw_type)
     elif efi_boot_loader == "grub":

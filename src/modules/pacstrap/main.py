@@ -114,6 +114,8 @@ def run():
         base_packages += ["refind"]
     elif bootloader == "systemd-boot":
         base_packages += ["systemd-boot-manager"]
+    elif bootloader == "uki":
+        base_packages += ["systemd-ukify", "shim-signed", "sbsigntools"]
 
     # Detect CPU vendor and add the correct microcode package
     try:

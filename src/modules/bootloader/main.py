@@ -1184,36 +1184,37 @@ def install_uki(efi_directory):
         libcalamares.utils.warning(f"Unknown EFI word size: {bitness}")
         return
 
-    # Sign systemd-boot binary with MOK key
+    # Sign systemd-boot binary with MOK key (sbsign available on ISO)
+    # bootctl places the binary at EFI/<id>/ or EFI/systemd/ or EFI/BOOT/
     systemd_boot_path = os.path.join(efi_vendor_dir, systemd_boot_binary)
+    systemd_dir = os.path.join(install_efi_directory, "EFI", "systemd")
+    alt_path = os.path.join(systemd_dir, systemd_boot_binary)
+
+    sign_target = None
     if os.path.exists(systemd_boot_path):
+        sign_target = systemd_boot_path
+    elif os.path.exists(alt_path):
+        sign_target = alt_path
+
+    if sign_target:
         subprocess.check_call([
             "sbsign",
             "--key", mok_key,
             "--cert", mok_crt,
-            "--output", systemd_boot_path,
-            systemd_boot_path
+            "--output", sign_target,
+            sign_target
         ])
     else:
-        # bootctl may place it at EFI/systemd/ or EFI/BOOT/
-        systemd_dir = os.path.join(install_efi_directory, "EFI", "systemd")
-        alt_path = os.path.join(systemd_dir, systemd_boot_binary)
-        if os.path.exists(alt_path):
-            subprocess.check_call([
-                "sbsign",
-                "--key", mok_key,
-                "--cert", mok_crt,
-                "--output", alt_path,
-                alt_path
-            ])
-        else:
-            libcalamares.utils.warning(
-                f"systemd-boot binary not found for signing at {systemd_boot_path} or {alt_path}")
+        libcalamares.utils.warning(
+            f"systemd-boot binary not found for signing at {systemd_boot_path} or {alt_path}")
 
-    # --- Step 9: Set up shim ---
+    # --- Step 9: Set up shim (shim-signed available on ISO and in target) ---
     shim_source_dir = libcalamares.job.configuration.get(
         "ukiShimPath", "/usr/share/shim-signed")
-    shim_source = os.path.join(installation_root_path, shim_source_dir.lstrip("/"), shim_binary)
+    # Try host path first (ISO), fall back to target path
+    shim_source = os.path.join(shim_source_dir, shim_binary)
+    if not os.path.exists(shim_source):
+        shim_source = os.path.join(installation_root_path, shim_source_dir.lstrip("/"), shim_binary)
 
     # Copy shim as EFI fallback bootloader
     efi_boot_dir = os.path.join(install_efi_directory, "EFI", "BOOT")

@@ -1138,7 +1138,7 @@ def install_uki(efi_directory):
     uki_conf_path = os.path.join(kernel_config_path, "uki.conf")
     with open(uki_conf_path, "w") as uki_conf:
         uki_conf.write("[UKI]\n")
-        uki_conf.write("SecureBootSigningTool=/usr/bin/sbsign\n")
+        uki_conf.write("SecureBootSigningTool=sbsign\n")
         uki_conf.write("SecureBootPrivateKey=/etc/kernel/uki-certs/MOK.key\n")
         uki_conf.write("SecureBootCertificate=/etc/kernel/uki-certs/MOK.crt\n")
 

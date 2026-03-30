@@ -61,9 +61,33 @@ def should_auto_enroll(bootloader, auto_enroll):
     return bool(auto_enroll)
 
 
+def normalize_pcr_value(value, default=""):
+    if value is None:
+        return default
+
+    normalized = str(value).strip()
+    return normalized if normalized else default
+
+
+def normalize_supported_pcrs(values):
+    if values is None:
+        values = DEFAULT_SUPPORTED_PCRS
+
+    if isinstance(values, (str, int)):
+        values = [values]
+
+    normalized = [normalize_pcr_value(value) for value in values]
+    normalized = [value for value in normalized if value]
+
+    return normalized or list(DEFAULT_SUPPORTED_PCRS)
+
+
 def resolve_pcrs(configuration, global_storage_pcrs):
-    pcrs = global_storage_pcrs or configuration.get("defaultPcrs", DEFAULT_PCRS)
-    supported_pcrs = configuration.get("supportedPcrs", DEFAULT_SUPPORTED_PCRS)
+    pcrs = normalize_pcr_value(global_storage_pcrs) or normalize_pcr_value(
+        configuration.get("defaultPcrs", DEFAULT_PCRS),
+        DEFAULT_PCRS,
+    )
+    supported_pcrs = normalize_supported_pcrs(configuration.get("supportedPcrs", DEFAULT_SUPPORTED_PCRS))
 
     if pcrs not in supported_pcrs:
         raise ValueError(

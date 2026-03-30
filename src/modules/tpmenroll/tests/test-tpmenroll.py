@@ -42,6 +42,8 @@ assert main.find_encrypted_root_partition([{"mountPoint": "/", "device": "/dev/v
 
 assert main.resolve_pcrs(libcalamares.job.configuration, "") == "11"
 assert main.resolve_pcrs(libcalamares.job.configuration, "4") == "4"
+assert main.resolve_pcrs({"defaultPcrs": 11, "supportedPcrs": [11, 4]}, "") == "11"
+assert main.resolve_pcrs({"defaultPcrs": 11, "supportedPcrs": [11, 4]}, 4) == "4"
 try:
     main.resolve_pcrs(libcalamares.job.configuration, "7")
     raise AssertionError("Unsupported PCRs should fail")

@@ -15,8 +15,11 @@
 #ifdef HAVE_APPSTREAM_VERSION
 #include "ItemAppStream.h"
 #endif
+#include "Config.h"
 #include "PackageModel.h"
 
+#include "GlobalStorage.h"
+#include "JobQueue.h"
 #include "utils/Logger.h"
 
 #include <QtTest/QtTest>
@@ -31,6 +34,10 @@ void
 PackageChooserTests::initTestCase()
 {
     Logger::setupLogLevel( Logger::LOGDEBUG );
+    if ( !Calamares::JobQueue::instance() )
+    {
+        (void)new Calamares::JobQueue();
+    }
 }
 
 void
@@ -81,4 +88,54 @@ PackageChooserTests::testAppData()
               QStringLiteral( "Calamares is een installatieprogramma voor Linux distributies." ) );
     QVERIFY( !p2.screenshotPath.isEmpty() );
 #endif
+}
+
+void
+PackageChooserTests::testSystemRequirements()
+{
+    QVariantMap item;
+
+    QVERIFY( itemMatchesSystemRequirements( item, false, false ) );
+
+    item.insert( "efiOnly", true );
+    QVERIFY( !itemMatchesSystemRequirements( item, false, false ) );
+    QVERIFY( itemMatchesSystemRequirements( item, true, false ) );
+
+    item.insert( "tpmRequired", true );
+    QVERIFY( !itemMatchesSystemRequirements( item, true, false ) );
+    QVERIFY( itemMatchesSystemRequirements( item, true, true ) );
+
+    item.remove( "efiOnly" );
+    QVERIFY( !itemMatchesSystemRequirements( item, false, false ) );
+    QVERIFY( itemMatchesSystemRequirements( item, false, true ) );
+}
+
+void
+PackageChooserTests::testBootloaderSelectionTpmState()
+{
+    auto* gs = Calamares::JobQueue::instanceGlobalStorage();
+    QVERIFY( gs );
+
+    gs->remove( QStringLiteral( "packagechooser_bootloader" ) );
+    gs->remove( QStringLiteral( "tpmAutoEnroll" ) );
+    gs->remove( QStringLiteral( "tpmAutoEnrollPcrs" ) );
+
+    Config c;
+    c.setDefaultId( Calamares::ModuleSystem::InstanceKey( QStringLiteral( "packagechooser" ),
+                                                          QStringLiteral( "bootloader" ) ) );
+
+    c.updateGlobalStorage( { QStringLiteral( "systemd-boot-uki" ) } );
+    QCOMPARE( gs->value( QStringLiteral( "packagechooser_bootloader" ) ).toString(),
+              QStringLiteral( "systemd-boot-uki" ) );
+    QVERIFY( gs->value( QStringLiteral( "tpmAutoEnroll" ) ).toBool() );
+    QCOMPARE( gs->value( QStringLiteral( "tpmAutoEnrollPcrs" ) ).toString(), QStringLiteral( "11" ) );
+
+    gs->insert( QStringLiteral( "tpmAutoEnrollPcrs" ), QStringLiteral( "4" ) );
+    c.updateGlobalStorage( { QStringLiteral( "systemd-boot-uki" ) } );
+    QCOMPARE( gs->value( QStringLiteral( "tpmAutoEnrollPcrs" ) ).toString(), QStringLiteral( "4" ) );
+
+    c.updateGlobalStorage( { QStringLiteral( "grub" ) } );
+    QCOMPARE( gs->value( QStringLiteral( "packagechooser_bootloader" ) ).toString(), QStringLiteral( "grub" ) );
+    QVERIFY( !gs->value( QStringLiteral( "tpmAutoEnroll" ) ).toBool() );
+    QVERIFY( !gs->contains( QStringLiteral( "tpmAutoEnrollPcrs" ) ) );
 }

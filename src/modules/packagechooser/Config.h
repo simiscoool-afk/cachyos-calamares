@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <optional>
+#include <QVariantMap>
 
 enum class PackageChooserMode
 {
@@ -38,6 +39,9 @@ enum class PackageChooserMethod
 };
 
 const NamedEnumTable< PackageChooserMethod >& PackageChooserMethodNames();
+
+/** @brief Check if a chooser item matches the current system requirements. */
+bool itemMatchesSystemRequirements( const QVariantMap& itemMap, bool isEfiSystem, bool hasTpmDevice );
 
 class Config : public Calamares::ModuleSystem::Config
 {

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 CachyOS contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+---
+$schema: https://json-schema.org/schema#
+$id: https://calamares.io/schemas/tpmenroll
+additionalProperties: false
+type: object
+properties:
+    defaultPcrs: { type: string }
+    supportedPcrs:
+        type: array
+        items: { type: string }
+    tpm2Device: { type: string }

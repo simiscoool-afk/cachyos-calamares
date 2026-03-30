@@ -20,12 +20,71 @@
 #endif
 
 #include <QDir>
+#include <QFileInfo>
 #include "GlobalStorage.h"
 #include "JobQueue.h"
 #include "compat/Variant.h"
 #include "packages/Globals.h"
 #include "utils/Logger.h"
 #include "utils/Variant.h"
+
+static const auto gsTpmAutoEnrollKey = QStringLiteral( "tpmAutoEnroll" );
+static const auto gsTpmAutoEnrollPcrsKey = QStringLiteral( "tpmAutoEnrollPcrs" );
+static const auto systemdBootUki = QStringLiteral( "systemd-boot-uki" );
+
+static bool
+hasEfiSystem()
+{
+    return QDir( QStringLiteral( "/sys/firmware/efi/efivars" ) ).exists();
+}
+
+static bool
+hasTpmDevice()
+{
+    return QDir( QStringLiteral( "/sys/class/tpm/tpm0" ) ).exists()
+        || QFileInfo::exists( QStringLiteral( "/dev/tpmrm0" ) )
+        || QFileInfo::exists( QStringLiteral( "/dev/tpm0" ) );
+}
+
+bool
+itemMatchesSystemRequirements( const QVariantMap& itemMap, bool isEfiSystem, bool hasTpmDevice )
+{
+    if ( itemMap.value( "efiOnly" ).toBool() && !isEfiSystem )
+    {
+        return false;
+    }
+
+    if ( itemMap.value( "tpmRequired" ).toBool() && !hasTpmDevice )
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static void
+syncBootloaderTpmState( Calamares::GlobalStorage* gs,
+                        const Calamares::ModuleSystem::InstanceKey& key,
+                        const QString& selectedValue )
+{
+    if ( !gs || key.id() != QStringLiteral( "bootloader" ) )
+    {
+        return;
+    }
+
+    const bool enableTpmAutoEnroll = selectedValue == systemdBootUki;
+    gs->insert( gsTpmAutoEnrollKey, enableTpmAutoEnroll );
+
+    if ( enableTpmAutoEnroll )
+    {
+        const QString pcrs = gs->value( gsTpmAutoEnrollPcrsKey ).toString();
+        gs->insert( gsTpmAutoEnrollPcrsKey, pcrs.isEmpty() ? QStringLiteral( "11" ) : pcrs );
+    }
+    else
+    {
+        gs->remove( gsTpmAutoEnrollPcrsKey );
+    }
+}
 
 /** @brief This removes any values from @p groups that match @p source
  *
@@ -129,6 +188,7 @@ make_gs_key( const Calamares::ModuleSystem::InstanceKey& key )
 void
 Config::updateGlobalStorage( const QStringList& selected ) const
 {
+    auto* gs = Calamares::JobQueue::instance()->globalStorage();
     if ( m_packageChoice.has_value() )
     {
         cWarning() << "Inconsistent package choices -- both model and single-selection QML";
@@ -136,15 +196,15 @@ Config::updateGlobalStorage( const QStringList& selected ) const
     if ( m_method == PackageChooserMethod::Legacy )
     {
         QString value = selected.join( ',' );
-        Calamares::JobQueue::instance()->globalStorage()->insert( make_gs_key( m_defaultId ), value );
+        gs->insert( make_gs_key( m_defaultId ), value );
+        syncBootloaderTpmState( gs, m_defaultId, value );
         cDebug() << m_defaultId << "selected" << value;
     }
     else if ( m_method == PackageChooserMethod::Packages )
     {
         QStringList packageNames = m_model->getInstallPackagesForNames( selected );
         cDebug() << m_defaultId << "packages to install" << packageNames;
-        Calamares::Packages::setGSPackageAdditions(
-            Calamares::JobQueue::instance()->globalStorage(), m_defaultId, packageNames );
+        Calamares::Packages::setGSPackageAdditions( gs, m_defaultId, packageNames );
     }
     else if ( m_method == PackageChooserMethod::NetAdd )
     {
@@ -217,10 +277,12 @@ Config::updateGlobalStorage() const
         if ( m_packageChoice.has_value() )
         {
             gs->insert( make_gs_key( m_defaultId ), m_packageChoice.value() );
+            syncBootloaderTpmState( gs, m_defaultId, m_packageChoice.value() );
         }
         else
         {
             gs->remove( make_gs_key( m_defaultId ) );
+            syncBootloaderTpmState( gs, m_defaultId, QString() );
         }
     }
     else if ( m_method == PackageChooserMethod::Packages )
@@ -274,6 +336,8 @@ fillModel( PackageListModel* model, const QVariantList& items )
 #endif
 
     cDebug() << "Loading PackageChooser model items from config";
+    const bool isEfi = hasEfiSystem();
+    const bool hasTpm = hasTpmDevice();
     int item_index = 0;
     for ( const auto& item_it : items )
     {
@@ -285,9 +349,16 @@ fillModel( PackageListModel* model, const QVariantList& items )
             continue;
         }
 
-        if (item_map.contains("efiOnly") && !QDir( "/sys/firmware/efi/efivars" ).exists())
+        if ( !itemMatchesSystemRequirements( item_map, isEfi, hasTpm ) )
         {
-            cWarning() << "PackageChooser entry" << item_index << "is only for EFI systems.";
+            if ( item_map.value( "efiOnly" ).toBool() && !isEfi )
+            {
+                cWarning() << "PackageChooser entry" << item_index << "is only for EFI systems.";
+            }
+            if ( item_map.value( "tpmRequired" ).toBool() && !hasTpm )
+            {
+                cWarning() << "PackageChooser entry" << item_index << "requires a TPM device.";
+            }
             continue;
         }
 

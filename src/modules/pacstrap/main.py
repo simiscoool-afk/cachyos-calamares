@@ -32,6 +32,17 @@ class PacmanError(Exception):
         self.message = message
 
 
+SINGLE_KERNEL_PACKAGES = {
+    "linux-cachyos-lts",
+    "linux-cachyos-lts-headers",
+    "linux-cachyos-lts-zfs",
+}
+
+
+def restrict_to_single_kernel(base_packages):
+    return [pkg for pkg in base_packages if pkg not in SINGLE_KERNEL_PACKAGES]
+
+
 def pretty_name():
     return _("Install base system")
 
@@ -85,7 +96,7 @@ def run():
 
     if libcalamares.job.configuration:
         if "basePackages" in libcalamares.job.configuration:
-            base_packages = libcalamares.job.configuration["basePackages"]
+            base_packages = list(libcalamares.job.configuration["basePackages"])
         else:
             return "Package List Missing", "Cannot continue without list of packages to install"
     else:
@@ -114,6 +125,11 @@ def run():
         base_packages += ["refind"]
     elif bootloader == "systemd-boot":
         base_packages += ["systemd-boot-manager"]
+    elif bootloader == "systemd-boot-uki":
+        base_packages += ["systemd-ukify"]
+
+    if bootloader == "systemd-boot-uki":
+        base_packages = restrict_to_single_kernel(base_packages)
 
     # Detect CPU vendor and add the correct microcode package
     try:
@@ -167,7 +183,7 @@ def run():
 
     # copy files post install
     if "postInstallFiles" in libcalamares.job.configuration:
-        files_to_copy = libcalamares.job.configuration["postInstallFiles"]
+        files_to_copy = list(libcalamares.job.configuration["postInstallFiles"])
 
         if bootloader == "grub":
             files_to_copy.append("/etc/default/grub")

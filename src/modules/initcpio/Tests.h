@@ -22,6 +22,7 @@ public:
 private Q_SLOTS:
     void initTestCase();
     void testFixPermissions();
+    void testSkipInitcpioForSystemdBootUki();
 };
 
 #endif

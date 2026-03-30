@@ -10,6 +10,8 @@
 
 #include "InitcpioJob.h"
 
+#include "GlobalStorage.h"
+#include "JobQueue.h"
 #include "utils/Logger.h"
 #include "utils/System.h"
 #include "utils/UMask.h"
@@ -52,10 +54,24 @@ fixPermissions( const QDir& d )
     }
 }
 
+bool
+skipInitcpioForBootloader( const QString& bootloader )
+{
+    return bootloader == QStringLiteral( "systemd-boot-uki" );
+}
+
 Calamares::JobResult
 InitcpioJob::exec()
 {
     Calamares::UMask m( Calamares::UMask::Safe );
+    const auto* gs = Calamares::JobQueue::instance()->globalStorage();
+    const auto bootloader = gs ? gs->value( "packagechooser_bootloader" ).toString() : QString();
+
+    if ( skipInitcpioForBootloader( bootloader ) )
+    {
+        cDebug() << "Skipping initcpio job for bootloader" << bootloader;
+        return Calamares::JobResult::ok();
+    }
 
     if ( m_unsafe )
     {

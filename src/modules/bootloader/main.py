@@ -42,6 +42,12 @@ _ = gettext.translation("calamares-python",
 # to make identifiers (or to clean up names to make filenames).
 file_name_sanitizer = str.maketrans(" /()", "_-__")
 
+SYSTEMD_BOOT_UKI = "systemd-boot-uki"
+UKI_MAINTENANCE_SCRIPT = "/usr/local/bin/cachyos-uki-kernel"
+UKI_KERNEL_UPDATE_HOOK = "/etc/pacman.d/hooks/95-cachyos-uki-kernel-update.hook"
+UKI_KERNEL_REMOVE_HOOK = "/etc/pacman.d/hooks/95-cachyos-uki-kernel-remove.hook"
+UKI_SYSTEMD_UPDATE_HOOK = "/etc/pacman.d/hooks/95-cachyos-uki-systemd-update.hook"
+
 
 def pretty_name():
     return _("Install bootloader.")
@@ -140,7 +146,7 @@ def have_program_in_target(program : str):
 def get_kernel_params(uuid):
     # Configured kernel parameters (default "quiet"), if plymouth installed, add splash
     # screen parameter and then "rw".
-    kernel_params = libcalamares.job.configuration.get("kernelParams", ["quiet"])
+    kernel_params = list(libcalamares.job.configuration.get("kernelParams", ["quiet"]))
     if have_program_in_target("plymouth"):
         kernel_params.append("splash")
     kernel_params.append("rw")
@@ -217,6 +223,169 @@ def get_kernel_params(uuid):
     return kernel_params
 
 
+def write_text_file(path, content, mode=None):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as output_file:
+        output_file.write(content)
+    if mode is not None:
+        os.chmod(path, mode)
+
+
+def write_kernel_cmdline(installation_root_path, uuid):
+    kernel_cmdline_path = os.path.join(installation_root_path, "etc", "kernel", "cmdline")
+    write_text_file(kernel_cmdline_path, " ".join(get_kernel_params(uuid)) + "\n")
+
+
+def write_systemd_boot_uki_config(installation_root_path, uuid):
+    kernel_dir = os.path.join(installation_root_path, "etc", "kernel")
+    machine_id = get_machine_id(installation_root_path)
+
+    write_kernel_cmdline(installation_root_path, uuid)
+    write_text_file(os.path.join(kernel_dir, "entry-token"), machine_id + "\n")
+    write_text_file(
+        os.path.join(kernel_dir, "install.conf"),
+        "layout=uki\ninitrd_generator=mkinitcpio\nuki_generator=ukify\n",
+    )
+    write_text_file(os.path.join(kernel_dir, "uki.conf"), "[UKI]\n")
+
+
+def uki_maintenance_script():
+    return """#!/usr/bin/env bash
+set -eu
+
+ACTION="${1:-}"
+ENTRY_TOKEN_FILE="/etc/kernel/entry-token"
+UKI_DIR="/boot/EFI/Linux"
+
+read_entry_token() {
+    if [ -r "$ENTRY_TOKEN_FILE" ]; then
+        tr -d '\\n' < "$ENTRY_TOKEN_FILE"
+    elif [ -r /etc/machine-id ]; then
+        tr -d '\\n' < /etc/machine-id
+    fi
+}
+
+prune_ukis() {
+    entry_token="$(read_entry_token || true)"
+
+    [ -n "$entry_token" ] || return 0
+    [ -d "$UKI_DIR" ] || return 0
+
+    for uki in "$UKI_DIR"/"$entry_token"-*.efi; do
+        [ -e "$uki" ] || continue
+
+        base="${uki##*/}"
+        version="${base#${entry_token}-}"
+        version="${version%.efi}"
+        version="${version%%+*}"
+
+        if [ ! -d "/usr/lib/modules/$version" ]; then
+            rm -f "$uki"
+            rm -rf "$uki.extra.d"
+        fi
+    done
+}
+
+add_all() {
+    kernel-install add-all
+    prune_ukis
+}
+
+refresh_bootloader() {
+    if command -v bootctl >/dev/null 2>&1 && bootctl is-installed >/dev/null 2>&1; then
+        bootctl update
+    fi
+}
+
+case "$ACTION" in
+    add-all)
+        add_all
+        ;;
+    refresh)
+        refresh_bootloader
+        add_all
+        ;;
+    prune)
+        prune_ukis
+        ;;
+    *)
+        echo "Usage: $0 {add-all|refresh|prune}" >&2
+        exit 2
+        ;;
+esac
+"""
+
+
+def uki_kernel_update_hook():
+    return f"""[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/lib/initcpio/*
+Target = usr/lib/firmware/*
+Target = usr/lib/modules/*/extramodules/
+Target = usr/src/*/dkms.conf
+Target = usr/lib/systemd/systemd
+Target = usr/bin/cryptsetup
+Target = usr/bin/lvm
+
+[Trigger]
+Type = Path
+Operation = Install
+Operation = Upgrade
+Target = usr/lib/modules/*/vmlinuz
+
+[Trigger]
+Type = Package
+Operation = Install
+Operation = Upgrade
+Target = mkinitcpio
+Target = mkinitcpio-git
+Target = systemd-ukify
+
+[Action]
+Description = Updating unified kernel images...
+When = PostTransaction
+Exec = {UKI_MAINTENANCE_SCRIPT} add-all
+"""
+
+
+def uki_kernel_remove_hook():
+    return f"""[Trigger]
+Type = Package
+Operation = Remove
+Target = linux-cachyos
+Target = linux-cachyos-lts
+Target = linux-cachyos-zfs
+Target = linux-cachyos-lts-zfs
+
+[Action]
+Description = Cleaning up unified kernel images...
+When = PostTransaction
+Exec = {UKI_MAINTENANCE_SCRIPT} prune
+"""
+
+
+def uki_systemd_update_hook():
+    return f"""[Trigger]
+Type = Package
+Operation = Upgrade
+Target = systemd
+
+[Action]
+Description = Updating systemd-boot and unified kernel images...
+When = PostTransaction
+Exec = {UKI_MAINTENANCE_SCRIPT} refresh
+"""
+
+
+def install_systemd_boot_uki_maintenance(installation_root_path):
+    write_text_file(installation_root_path + UKI_MAINTENANCE_SCRIPT, uki_maintenance_script(), 0o755)
+    write_text_file(installation_root_path + UKI_KERNEL_UPDATE_HOOK, uki_kernel_update_hook())
+    write_text_file(installation_root_path + UKI_KERNEL_REMOVE_HOOK, uki_kernel_remove_hook())
+    write_text_file(installation_root_path + UKI_SYSTEMD_UPDATE_HOOK, uki_systemd_update_hook())
+
+
 def create_systemd_boot_conf(installation_root_path, efi_dir, uuid, kernel, kernel_version):
     """
     Creates systemd-boot configuration files based on given parameters.
@@ -230,11 +399,7 @@ def create_systemd_boot_conf(installation_root_path, efi_dir, uuid, kernel, kern
 
     # Get the kernel params and write them to /etc/kernel/cmdline
     # This file is used by kernel-install
-    kernel_params = " ".join(get_kernel_params(uuid))
-    kernel_cmdline_path = os.path.join(installation_root_path, "etc", "kernel")
-    os.makedirs(kernel_cmdline_path, exist_ok=True)
-    with open(os.path.join(kernel_cmdline_path, "cmdline"), "w") as cmdline_file:
-        cmdline_file.write(kernel_params)
+    write_kernel_cmdline(installation_root_path, uuid)
 
     libcalamares.utils.debug(f"Configuring kernel version {kernel_version}")
 
@@ -568,6 +733,31 @@ def install_systemd_boot(efi_directory):
                                  kernel_version)
 
     create_loader(loader_path, installation_root_path)
+
+
+def install_systemd_boot_uki(efi_directory):
+    """
+    Installs systemd-boot as a dedicated UKI path for EFI setups.
+
+    :param efi_directory:
+    """
+    libcalamares.utils.debug("Bootloader: systemd-boot (uki)")
+    installation_root_path = libcalamares.globalstorage.value("rootMountPoint")
+    install_efi_directory = installation_root_path + efi_directory
+    uuid = get_uuid()
+    loader_path = os.path.join(install_efi_directory, "loader", "loader.conf")
+
+    os.makedirs(install_efi_directory, exist_ok=True)
+    subprocess.check_call(
+        ["bootctl", "--path={!s}".format(install_efi_directory), "install"],
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+    )
+
+    write_systemd_boot_uki_config(installation_root_path, uuid)
+    create_loader(loader_path, installation_root_path)
+    install_systemd_boot_uki_maintenance(installation_root_path)
+    check_target_env_call(["kernel-install", "add-all"])
 
 
 def get_grub_efi_parameters():
@@ -1094,6 +1284,8 @@ def prepare_bootloader(fw_type, install_hybrid_grub):
         install_clr_boot_manager()
     elif efi_boot_loader == "systemd-boot" and fw_type == "efi":
         install_systemd_boot(efi_directory)
+    elif efi_boot_loader == SYSTEMD_BOOT_UKI and fw_type == "efi":
+        install_systemd_boot_uki(efi_directory)
     elif efi_boot_loader == "sb-shim" and fw_type == "efi":
         install_secureboot(efi_directory)
     elif (efi_boot_loader == "refind" or efi_boot_loader == "refind-ai") and fw_type == "efi":

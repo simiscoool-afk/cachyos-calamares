@@ -22,6 +22,7 @@
 #include <QStringList>
 
 extern void fixPermissions( const QDir& d );
+extern bool skipInitcpioForBootloader( const QString& bootloader );
 
 QTEST_GUILESS_MAIN( InitcpioTests )
 
@@ -43,4 +44,12 @@ InitcpioTests::testFixPermissions()
     cDebug() << "Fixing up /nonexistent";
     fixPermissions( QDir( "/nonexistent/nonexistent" ) );
     QVERIFY( true );
+}
+
+void
+InitcpioTests::testSkipInitcpioForSystemdBootUki()
+{
+    QVERIFY( skipInitcpioForBootloader( QStringLiteral( "systemd-boot-uki" ) ) );
+    QVERIFY( !skipInitcpioForBootloader( QStringLiteral( "systemd-boot" ) ) );
+    QVERIFY( !skipInitcpioForBootloader( QStringLiteral( "limine" ) ) );
 }

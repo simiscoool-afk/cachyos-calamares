@@ -8,6 +8,7 @@
 #
 
 import os
+import re
 import subprocess
 
 import libcalamares
@@ -106,6 +107,53 @@ def build_enroll_command(device, pcrs, tpm2_device):
     ]
 
 
+def update_crypttab(root_mount_point, mapper_name, tpm2_device):
+    """Add tpm2-device= to the crypttab entry for the given mapper name."""
+    crypttab_path = os.path.join(root_mount_point, "etc", "crypttab")
+    if not os.path.isfile(crypttab_path):
+        libcalamares.utils.warning(f"Cannot update crypttab: {crypttab_path} does not exist.")
+        return False
+
+    with open(crypttab_path, "r") as f:
+        lines = f.readlines()
+
+    tpm2_option = f"tpm2-device={tpm2_device}"
+    updated = False
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        fields = stripped.split()
+        if len(fields) >= 1 and fields[0] == mapper_name:
+            if "tpm2-device=" in stripped:
+                updated = True
+                break
+
+            if len(fields) >= 4:
+                lines[i] = re.sub(
+                    r'(\S+\s+\S+\s+\S+\s+)(.*)',
+                    rf'\1\2,{tpm2_option}',
+                    line.rstrip(),
+                ) + "\n"
+            else:
+                lines[i] = line.rstrip() + f" {tpm2_option}\n"
+
+            updated = True
+            break
+
+    if not updated:
+        libcalamares.utils.warning(f"Could not find crypttab entry for mapper '{mapper_name}'.")
+        return False
+
+    with open(crypttab_path, "w") as f:
+        f.writelines(lines)
+
+    libcalamares.utils.debug(f"Updated crypttab: added {tpm2_option} to entry '{mapper_name}'.")
+    return True
+
+
 def enroll_tpm2(device, passphrase, pcrs, tpm2_device):
     command = build_enroll_command(device, pcrs, tpm2_device)
     result = subprocess.run(
@@ -135,9 +183,6 @@ def run():
         )
     except ValueError as error:
         return (_("Configuration Error"), str(error))
-
-    global_storage.insert(TPM_AUTO_ENROLL_KEY, True)
-    global_storage.insert(TPM_AUTO_ENROLL_PCRS_KEY, pcrs)
 
     root_partition = find_encrypted_root_partition(global_storage.value("partitions"))
     if not root_partition:
@@ -181,5 +226,13 @@ def run():
                 " ".join(command)
             ),
         )
+
+    global_storage.insert(TPM_AUTO_ENROLL_KEY, True)
+    global_storage.insert(TPM_AUTO_ENROLL_PCRS_KEY, pcrs)
+
+    root_mount_point = global_storage.value("rootMountPoint")
+    mapper_name = root_partition.get("luksMapperName", "")
+    if root_mount_point and mapper_name:
+        update_crypttab(root_mount_point, mapper_name, tpm2_device)
 
     return None

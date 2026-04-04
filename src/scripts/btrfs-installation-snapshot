@@ -5,12 +5,11 @@ if ! pacman -Qs cachyos-snapper-support > /dev/null 2>&1; then
     exit 0
 fi
 
-# Create installation snapshot with no cleanup algorithm so snapper
-# will never automatically delete it — used as a restore point.
+# Create installation snapshot — snapper defaults to no cleanup algorithm,
+# so this snapshot will never be automatically deleted. Used as a restore point.
 # --print-number outputs the snapshot ID so we can save it for later use
 # by restore tooling (e.g. snapper rollback).
 SNAP_ID=$(snapper --no-dbus -c root create --print-number \
-    --cleanup-algorithm "" \
     --description "Fresh CachyOS Installation" \
     --userdata "important=yes")
 

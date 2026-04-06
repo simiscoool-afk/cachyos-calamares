@@ -695,7 +695,6 @@
     - ghostscript
     - gsfonts
     - gutenprint
-    - splix
     - system-config-printer
 - name: "Support for HP Printer/Scanner"
   description: "Extra Packages for HP Printer/Scanner"

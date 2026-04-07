@@ -114,6 +114,8 @@ def run():
         base_packages += ["refind"]
     elif bootloader == "systemd-boot":
         base_packages += ["systemd-boot-manager"]
+    elif bootloader == "zfsbootmenu":
+        base_packages += ["zfsbootmenu", "efibootmgr"]
 
     # Detect CPU vendor and add the correct microcode package
     try:

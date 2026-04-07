@@ -30,4 +30,6 @@ elif pacman -Qq systemd-boot-manager 2>/dev/null && bootctl is-installed 2>/dev/
     echo "Enable systemd boot manager for automatic boot entry generation"
     rm -rf /boot/loader/entries/*
     sdboot-manage gen
+elif pacman -Qq zfsbootmenu 2>/dev/null; then
+    echo "ZFSBootMenu installed, no additional post-setup required"
 fi

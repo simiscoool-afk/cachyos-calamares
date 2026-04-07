@@ -1049,6 +1049,137 @@ def install_refind(efi_directory):
     update_refind_config(efi_directory, installation_root_path)
 
 
+def install_zfsbootmenu(efi_directory):
+    """
+    Installs ZFSBootMenu as bootloader for EFI+ZFS setups.
+
+    :param efi_directory: The EFI system partition mount path
+    """
+    libcalamares.utils.debug("Bootloader: zfsbootmenu")
+
+    installation_root_path = libcalamares.globalstorage.value("rootMountPoint")
+    partitions = libcalamares.globalstorage.value("partitions")
+
+    if not partitions:
+        libcalamares.utils.warning("Failed to install ZFSBootMenu, no partitions in global storage")
+        return
+
+    # Validate that root is on ZFS
+    if not any(is_zfs_root(p) for p in partitions):
+        raise subprocess.CalledProcessError(
+            1, "zfsbootmenu",
+            stderr="ZFSBootMenu requires a ZFS root filesystem")
+
+    zfs_root_path = get_zfs_root()
+    if zfs_root_path is None:
+        raise subprocess.CalledProcessError(
+            1, "zfsbootmenu",
+            stderr="Could not determine ZFS root dataset")
+
+    # Extract pool name from root path (e.g. "zpcachyos/ROOT/cos/root" -> "zpcachyos")
+    pool_name = zfs_root_path.split("/")[0]
+
+    # Build kernel commandline for org.zfsbootmenu:commandline
+    # This should NOT include root= — ZBM handles root selection itself
+    kernel_params = libcalamares.job.configuration.get("kernelParams", ["quiet"])
+    if have_program_in_target("plymouth"):
+        kernel_params.append("splash")
+    kernel_params.append("rw")
+
+    use_systemd_naming = have_program_in_target("dracut") or (
+        libcalamares.utils.target_env_call(
+            ["/usr/bin/grep", "-q", "^HOOKS.*systemd", "/etc/mkinitcpio.conf"]
+        ) == 0
+    )
+
+    # Add LUKS params if root is on LUKS
+    for partition in partitions:
+        has_luks = "luksMapperName" in partition
+        if partition["mountPoint"] == "/" and has_luks:
+            if use_systemd_naming:
+                kernel_params.append(f"rd.luks.uuid={partition['luksUuid']}")
+            else:
+                kernel_params.append(
+                    f"cryptdevice=UUID={partition['luksUuid']}:{partition['luksMapperName']}"
+                )
+
+    commandline = " ".join(kernel_params)
+    libcalamares.utils.debug(f"ZFSBootMenu commandline: {commandline}")
+
+    # Set the commandline property on the root dataset
+    check_target_env_call(["zfs", "set",
+                           f"org.zfsbootmenu:commandline={commandline}",
+                           zfs_root_path])
+
+    # Create ZFSBootMenu configuration
+    zbm_conf_dir = os.path.join(installation_root_path, "etc", "zfsbootmenu")
+    os.makedirs(zbm_conf_dir, exist_ok=True)
+
+    zbm_config = os.path.join(zbm_conf_dir, "config.yaml")
+    with open(zbm_config, "w") as f:
+        f.write("Global:\n")
+        f.write("  ManageImages: true\n")
+        f.write(f"  BootMountPoint: {efi_directory}\n")
+        f.write("  InitCPIO: true\n")
+        f.write("Components:\n")
+        f.write("  Enabled: false\n")
+        f.write("EFI:\n")
+        f.write("  Enabled: true\n")
+        f.write(f"  ImageDir: {efi_directory}/EFI/zbm\n")
+        f.write("  Versions: false\n")
+        f.write("Kernel:\n")
+        f.write(f"  CommandLine: \"zbm.prefer={pool_name} ro quiet loglevel=0\"\n")
+
+    # Ensure EFI/zbm directory exists
+    zbm_efi_dir = os.path.join(installation_root_path + efi_directory, "EFI", "zbm")
+    os.makedirs(zbm_efi_dir, exist_ok=True)
+
+    # Generate ZFSBootMenu EFI images
+    check_target_env_call(["generate-zbm"])
+
+    # Create EFI boot entries via efibootmgr
+    esp_partition = None
+    for partition in partitions:
+        if partition["mountPoint"] == efi_directory:
+            esp_partition = partition
+            break
+
+    # Install fallback at EFI/BOOT/BOOTX64.EFI for firmwares that ignore NVRAM entries
+    install_efi_directory = installation_root_path + efi_directory
+    install_efi_boot_directory = os.path.join(
+        vfat_correct_case(os.path.join(install_efi_directory, "EFI"), "boot"))
+    os.makedirs(install_efi_boot_directory, exist_ok=True)
+
+    zbm_efi_source = os.path.join(zbm_efi_dir, "vmlinuz.EFI")
+    efi_fallback_target = os.path.join(install_efi_boot_directory, "BOOTX64.EFI")
+    if os.path.exists(zbm_efi_source):
+        shutil.copy2(zbm_efi_source, efi_fallback_target)
+
+    if esp_partition:
+        esp_device = esp_partition["device"]
+        drive, part_num = get_partition_drive(esp_device)
+
+        # Primary EFI boot entry
+        check_target_env_call([
+            "efibootmgr", "--create",
+            "--disk", drive,
+            "--part", str(part_num),
+            "--label", "ZFSBootMenu",
+            "--loader", "\\EFI\\zbm\\vmlinuz.EFI"
+        ])
+
+        # Backup EFI boot entry
+        check_target_env_call([
+            "efibootmgr", "--create",
+            "--disk", drive,
+            "--part", str(part_num),
+            "--label", "ZFSBootMenu (Backup)",
+            "--loader", "\\EFI\\zbm\\vmlinuz-backup.EFI"
+        ])
+    else:
+        libcalamares.utils.warning("Could not find ESP partition for efibootmgr")
+
+
 def prepare_bootloader(fw_type, install_hybrid_grub):
     """
     Prepares bootloader.
@@ -1100,6 +1231,8 @@ def prepare_bootloader(fw_type, install_hybrid_grub):
         install_refind(efi_directory)
     elif efi_boot_loader == "limine":
         install_limine(efi_directory, fw_type)
+    elif efi_boot_loader == "zfsbootmenu" and fw_type == "efi":
+        install_zfsbootmenu(efi_directory)
     elif efi_boot_loader == "grub":
         install_grub(efi_directory, fw_type, install_hybrid_grub)
     else:

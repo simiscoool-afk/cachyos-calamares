@@ -1066,42 +1066,23 @@ def install_zfsbootmenu(efi_directory):
 
     # Validate that root is on ZFS
     if not any(is_zfs_root(p) for p in partitions):
-        raise subprocess.CalledProcessError(
-            1, "zfsbootmenu",
-            stderr="ZFSBootMenu requires a ZFS root filesystem")
+        raise RuntimeError("ZFSBootMenu requires a ZFS root filesystem")
 
     zfs_root_path = get_zfs_root()
     if zfs_root_path is None:
-        raise subprocess.CalledProcessError(
-            1, "zfsbootmenu",
-            stderr="Could not determine ZFS root dataset")
+        raise RuntimeError("Could not determine ZFS root dataset")
 
     # Extract pool name from root path (e.g. "zpcachyos/ROOT/cos/root" -> "zpcachyos")
     pool_name = zfs_root_path.split("/")[0]
 
     # Build kernel commandline for org.zfsbootmenu:commandline
     # This should NOT include root= — ZBM handles root selection itself
+    # No LUKS params needed: ZBM uses ZFS-native encryption, and partition.conf
+    # restricts the filesystem to ZFS-only when ZBM is selected.
     kernel_params = libcalamares.job.configuration.get("kernelParams", ["quiet"])
     if have_program_in_target("plymouth"):
         kernel_params.append("splash")
     kernel_params.append("rw")
-
-    use_systemd_naming = have_program_in_target("dracut") or (
-        libcalamares.utils.target_env_call(
-            ["/usr/bin/grep", "-q", "^HOOKS.*systemd", "/etc/mkinitcpio.conf"]
-        ) == 0
-    )
-
-    # Add LUKS params if root is on LUKS
-    for partition in partitions:
-        has_luks = "luksMapperName" in partition
-        if partition["mountPoint"] == "/" and has_luks:
-            if use_systemd_naming:
-                kernel_params.append(f"rd.luks.uuid={partition['luksUuid']}")
-            else:
-                kernel_params.append(
-                    f"cryptdevice=UUID={partition['luksUuid']}:{partition['luksMapperName']}"
-                )
 
     commandline = " ".join(kernel_params)
     libcalamares.utils.debug(f"ZFSBootMenu commandline: {commandline}")

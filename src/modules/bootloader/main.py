@@ -1118,6 +1118,14 @@ def install_zfsbootmenu(efi_directory):
     # Generate ZFSBootMenu EFI images
     check_target_env_call(["generate-zbm"])
 
+    # Verify that generate-zbm actually produced the expected EFI images
+    zbm_primary = os.path.join(zbm_efi_dir, "vmlinuz.EFI")
+    zbm_backup = os.path.join(zbm_efi_dir, "vmlinuz-backup.EFI")
+    if not os.path.exists(zbm_primary):
+        raise RuntimeError(f"generate-zbm succeeded but failed to create {zbm_primary}")
+    if not os.path.exists(zbm_backup):
+        libcalamares.utils.warning(f"generate-zbm did not create backup image {zbm_backup}")
+
     # Create EFI boot entries via efibootmgr
     esp_partition = None
     for partition in partitions:
@@ -1131,10 +1139,8 @@ def install_zfsbootmenu(efi_directory):
         vfat_correct_case(os.path.join(install_efi_directory, "EFI"), "boot"))
     os.makedirs(install_efi_boot_directory, exist_ok=True)
 
-    zbm_efi_source = os.path.join(zbm_efi_dir, "vmlinuz.EFI")
     efi_fallback_target = os.path.join(install_efi_boot_directory, "BOOTX64.EFI")
-    if os.path.exists(zbm_efi_source):
-        shutil.copy2(zbm_efi_source, efi_fallback_target)
+    shutil.copy2(zbm_primary, efi_fallback_target)
 
     if esp_partition:
         esp_device = esp_partition["device"]
@@ -1149,14 +1155,15 @@ def install_zfsbootmenu(efi_directory):
             "--loader", "\\EFI\\zbm\\vmlinuz.EFI"
         ])
 
-        # Backup EFI boot entry
-        check_target_env_call([
-            "efibootmgr", "--create",
-            "--disk", drive,
-            "--part", str(part_num),
-            "--label", "ZFSBootMenu (Backup)",
-            "--loader", "\\EFI\\zbm\\vmlinuz-backup.EFI"
-        ])
+        # Backup EFI boot entry (only if backup image was generated)
+        if os.path.exists(zbm_backup):
+            check_target_env_call([
+                "efibootmgr", "--create",
+                "--disk", drive,
+                "--part", str(part_num),
+                "--label", "ZFSBootMenu (Backup)",
+                "--loader", "\\EFI\\zbm\\vmlinuz-backup.EFI"
+            ])
     else:
         libcalamares.utils.warning("Could not find ESP partition for efibootmgr")
 

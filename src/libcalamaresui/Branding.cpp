@@ -170,7 +170,8 @@ uploadServerFromMap( const QVariantMap& map )
     // clang-format off
     static const NamedEnumTable< Type > names {
         { "none", Type::None },
-        { "fiche", Type::Fiche }
+        { "fiche", Type::Fiche },
+        { "http", Type::Http }
     };
     // clang-format on
     // *INDENT-ON*

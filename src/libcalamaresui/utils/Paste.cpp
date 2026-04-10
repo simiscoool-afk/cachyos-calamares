@@ -17,10 +17,15 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QTcpSocket>
+#include <QTimer>
 #include <QUrl>
 #include <QWidget>
 
@@ -115,6 +120,85 @@ ficheLogUpload( const QByteArray& pasteData, const QUrl& serverUrl, QObject* par
     }
 }
 
+STATICTEST QString
+httpPasteUrl( const QByteArray& responseText, const QUrl& serverUrl )
+{
+    if ( !serverUrl.isValid() )
+    {
+        cError() << "Paste server URL is invalid";
+        return QString();
+    }
+
+    const QString responsePath = QString::fromUtf8( responseText ).trimmed();
+    if ( responsePath.isEmpty() )
+    {
+        cError() << "No data from paste server";
+        return QString();
+    }
+
+    QUrl pasteUrl = serverUrl.resolved( QUrl( responsePath ) );
+    if ( !pasteUrl.isValid() || pasteUrl.host() != serverUrl.host() || pasteUrl.scheme() != serverUrl.scheme() )
+    {
+        cError() << "Paste server returned an unexpected URL";
+        return QString();
+    }
+
+    return pasteUrl.toString() + ".log";
+}
+
+STATICTEST bool
+waitForReply( QNetworkReply* reply, int timeoutMs )
+{
+    if ( !reply )
+    {
+        return false;
+    }
+
+    QEventLoop loop;
+    QTimer timer;
+    timer.setSingleShot( true );
+    QObject::connect( reply, &QNetworkReply::finished, &loop, &QEventLoop::quit );
+    QObject::connect( &timer, &QTimer::timeout, &loop, &QEventLoop::quit );
+    timer.start( timeoutMs );
+    loop.exec();
+
+    if ( !reply->isFinished() )
+    {
+        cError() << "Timed out waiting for paste server response";
+        reply->abort();
+        return false;
+    }
+
+    return true;
+}
+
+STATICTEST QString
+httpLogUpload( const QByteArray& pasteData, const QUrl& serverUrl, QObject* parent )
+{
+    constexpr int httpTimeoutMs = 30000;
+
+    QNetworkAccessManager manager( parent );
+    QNetworkRequest request( serverUrl );
+    QNetworkReply* reply = manager.post( request, pasteData );
+
+    if ( !waitForReply( reply, httpTimeoutMs ) )
+    {
+        reply->deleteLater();
+        return QString();
+    }
+
+    if ( reply->error() != QNetworkReply::NoError )
+    {
+        cError() << "Could not upload to paste server" << reply->errorString();
+        reply->deleteLater();
+        return QString();
+    }
+
+    const QString pasteUrl = httpPasteUrl( reply->readAll(), serverUrl );
+    reply->deleteLater();
+    return pasteUrl;
+}
+
 QString
 Calamares::Paste::doLogUpload( QObject* parent )
 {
@@ -150,6 +234,8 @@ Calamares::Paste::doLogUpload( QObject* parent )
         return QString();
     case Calamares::Branding::UploadServerType::Fiche:
         return ficheLogUpload( pasteData, serverUrl, parent );
+    case Calamares::Branding::UploadServerType::Http:
+        return httpLogUpload( pasteData, serverUrl, parent );
     }
     return QString();
 }

@@ -154,6 +154,11 @@ waitForReply( QNetworkReply* reply, int timeoutMs )
         return false;
     }
 
+    if ( reply->isFinished() )
+    {
+        return true;
+    }
+
     QEventLoop loop;
     QTimer timer;
     timer.setSingleShot( true );

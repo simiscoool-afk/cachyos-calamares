@@ -184,6 +184,8 @@ httpLogUpload( const QByteArray& pasteData, const QUrl& serverUrl, QObject* pare
 
     QNetworkAccessManager manager( parent );
     QNetworkRequest request( serverUrl );
+    request.setAttribute( QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy );
+    request.setHeader( QNetworkRequest::UserAgentHeader, QStringLiteral( "Calamares Paste Upload" ) );
     QNetworkReply* reply = manager.post( request, pasteData );
 
     if ( !waitForReply( reply, httpTimeoutMs ) )

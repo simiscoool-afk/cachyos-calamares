@@ -24,6 +24,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QRegularExpression>
 #include <QTcpSocket>
 #include <QTimer>
 #include <QUrl>
@@ -136,8 +137,24 @@ httpPasteUrl( const QByteArray& responseText, const QUrl& serverUrl )
         return QString();
     }
 
-    QUrl pasteUrl = serverUrl.resolved( QUrl( responsePath ) );
+    const QUrl responseUrl( responsePath, QUrl::StrictMode );
+    if ( !responseUrl.isValid() )
+    {
+        cError() << "Paste server returned an invalid URL";
+        return QString();
+    }
+
+    QUrl pasteUrl = serverUrl.resolved( responseUrl );
     if ( !pasteUrl.isValid() || pasteUrl.host() != serverUrl.host() || pasteUrl.scheme() != serverUrl.scheme() )
+    {
+        cError() << "Paste server returned an unexpected URL";
+        return QString();
+    }
+
+    // Expect a simple identifier path like "/abc123". Reject HTML error pages
+    // and anything that smuggles a query string or fragment.
+    static const QRegularExpression pathPattern( QStringLiteral( "\\A/[A-Za-z0-9._~-]+\\z" ) );
+    if ( !pathPattern.match( pasteUrl.path() ).hasMatch() || pasteUrl.hasQuery() || pasteUrl.hasFragment() )
     {
         cError() << "Paste server returned an unexpected URL";
         return QString();

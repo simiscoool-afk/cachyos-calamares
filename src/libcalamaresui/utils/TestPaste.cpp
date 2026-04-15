@@ -10,17 +10,14 @@
  */
 
 #include "Paste.h"
-#include "network/Manager.h"
 
 #include "utils/Logger.h"
 
-#include <QDateTime>
 #include <QNetworkReply>
 #include <QTimer>
 #include <QtTest/QtTest>
 
 extern QByteArray logFileContents( qint64 sizeLimitBytes );
-extern QString ficheLogUpload( const QByteArray& pasteData, const QUrl& serverUrl, QObject* parent );
 extern QString httpPasteUrl( const QByteArray& responseText, const QUrl& serverUrl );
 extern bool waitForReply( QNetworkReply* reply, int timeoutMs );
 
@@ -92,8 +89,6 @@ private Q_SLOTS:
     void testHttpPasteUrl();
     void testWaitForReplyCompletes();
     void testWaitForReplyTimeout();
-    void testFichePaste();
-    void testUploadSize();
 };
 
 void
@@ -118,10 +113,27 @@ TestPaste::testGetLogFile()
 void
 TestPaste::testHttpPasteUrl()
 {
-    QCOMPARE( httpPasteUrl( QByteArray( "/abc123\n" ), QUrl( "https://paste.cachyos.org" ) ),
+    const QUrl server( "https://paste.cachyos.org" );
+
+    // Relative path response
+    QCOMPARE( httpPasteUrl( QByteArray( "/abc123\n" ), server ),
               QString( "https://paste.cachyos.org/abc123.log" ) );
-    QVERIFY( httpPasteUrl( QByteArray( "https://example.org/abc123\n" ), QUrl( "https://paste.cachyos.org" ) )
-                 .isEmpty() );
+    // Absolute URL on the same origin
+    QCOMPARE( httpPasteUrl( QByteArray( "https://paste.cachyos.org/abc123" ), server ),
+              QString( "https://paste.cachyos.org/abc123.log" ) );
+
+    // Rejected: cross-origin absolute URL
+    QVERIFY( httpPasteUrl( QByteArray( "https://example.org/abc123\n" ), server ).isEmpty() );
+    // Rejected: empty response
+    QVERIFY( httpPasteUrl( QByteArray( "" ), server ).isEmpty() );
+    // Rejected: HTML error page (Cloudflare interstitial, etc.)
+    QVERIFY( httpPasteUrl( QByteArray( "<html><body>503</body></html>" ), server ).isEmpty() );
+    // Rejected: response with a query string
+    QVERIFY( httpPasteUrl( QByteArray( "/abc123?foo=bar" ), server ).isEmpty() );
+    // Rejected: response with a fragment
+    QVERIFY( httpPasteUrl( QByteArray( "/abc123#frag" ), server ).isEmpty() );
+    // Rejected: path traversal
+    QVERIFY( httpPasteUrl( QByteArray( "/../etc/passwd" ), server ).isEmpty() );
 }
 
 void
@@ -143,32 +155,6 @@ TestPaste::testWaitForReplyTimeout()
     QVERIFY( reply.aborted() );
 }
 
-void
-TestPaste::testFichePaste()
-{
-    QString blabla( "the quick brown fox tested Calamares and found it rubbery" );
-    QDateTime now = QDateTime::currentDateTime();
-
-    QByteArray d = ( blabla + now.toString() ).toUtf8();
-    QString s = ficheLogUpload( d, QUrl( "http://termbin.com:9999" ), nullptr );
-
-    cDebug() << "Paste data to" << s;
-    QVERIFY( !s.isEmpty() );
-}
-
-void
-TestPaste::testUploadSize()
-{
-    QByteArray logContent = logFileContents( 100 );
-    QString s = ficheLogUpload( logContent, QUrl( "http://termbin.com:9999" ), nullptr );
-
-    QVERIFY( !s.isEmpty() );
-
-    QUrl url( s );
-    QByteArray returnedData = Calamares::Network::Manager().synchronousGet( url );
-
-    QCOMPARE( returnedData.size(), 100 );
-}
 QTEST_GUILESS_MAIN( TestPaste )
 
 #include "utils/moc-warnings.h"

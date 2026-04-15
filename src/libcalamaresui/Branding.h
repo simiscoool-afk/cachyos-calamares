@@ -94,7 +94,8 @@ public:
     enum UploadServerType : short
     {
         None,
-        Fiche
+        Fiche,
+        Http
     };
     Q_ENUM( UploadServerType )
 

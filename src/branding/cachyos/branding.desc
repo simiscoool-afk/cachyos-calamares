@@ -214,6 +214,6 @@ slideshowAPI: 2
 
 # log feature
 uploadServer :
-    type :    "fiche"
-    url :     "http://termbin.com:9999"
+    type :    "http"
+    url :     "https://paste.cachyos.org"
     sizeLimit : -1

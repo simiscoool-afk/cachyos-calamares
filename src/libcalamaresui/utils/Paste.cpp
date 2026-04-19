@@ -144,17 +144,20 @@ httpPasteUrl( const QByteArray& responseText, const QUrl& serverUrl )
         return QString();
     }
 
-    QUrl pasteUrl = serverUrl.resolved( responseUrl );
-    if ( !pasteUrl.isValid() || pasteUrl.host() != serverUrl.host() || pasteUrl.scheme() != serverUrl.scheme() )
+    // Validate the raw response path *before* resolving, so "." / ".." segments
+    // can't be normalized away. Expect an identifier path like "/abc123" or
+    // "/p/abc123" and reject HTML error pages, traversal, queries, fragments.
+    static const QRegularExpression pathPattern(
+        QStringLiteral( "\\A(/[A-Za-z0-9_~][A-Za-z0-9._~-]*)+\\z" ) );
+    if ( !pathPattern.match( responseUrl.path() ).hasMatch() || responseUrl.hasQuery()
+         || responseUrl.hasFragment() )
     {
         cError() << "Paste server returned an unexpected URL";
         return QString();
     }
 
-    // Expect a simple identifier path like "/abc123". Reject HTML error pages
-    // and anything that smuggles a query string or fragment.
-    static const QRegularExpression pathPattern( QStringLiteral( "\\A/[A-Za-z0-9._~-]+\\z" ) );
-    if ( !pathPattern.match( pasteUrl.path() ).hasMatch() || pasteUrl.hasQuery() || pasteUrl.hasFragment() )
+    QUrl pasteUrl = serverUrl.resolved( responseUrl );
+    if ( !pasteUrl.isValid() || pasteUrl.host() != serverUrl.host() || pasteUrl.scheme() != serverUrl.scheme() )
     {
         cError() << "Paste server returned an unexpected URL";
         return QString();

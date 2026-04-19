@@ -118,6 +118,9 @@ TestPaste::testHttpPasteUrl()
     // Relative path response
     QCOMPARE( httpPasteUrl( QByteArray( "/abc123\n" ), server ),
               QString( "https://paste.cachyos.org/abc123.log" ) );
+    // Multi-segment path as returned by paste.cachyos.org
+    QCOMPARE( httpPasteUrl( QByteArray( "/p/ca17c60\n" ), server ),
+              QString( "https://paste.cachyos.org/p/ca17c60.log" ) );
     // Absolute URL on the same origin
     QCOMPARE( httpPasteUrl( QByteArray( "https://paste.cachyos.org/abc123" ), server ),
               QString( "https://paste.cachyos.org/abc123.log" ) );
@@ -134,6 +137,9 @@ TestPaste::testHttpPasteUrl()
     QVERIFY( httpPasteUrl( QByteArray( "/abc123#frag" ), server ).isEmpty() );
     // Rejected: path traversal
     QVERIFY( httpPasteUrl( QByteArray( "/../etc/passwd" ), server ).isEmpty() );
+    // Rejected: "." / ".." segments mid-path
+    QVERIFY( httpPasteUrl( QByteArray( "/p/../etc/passwd" ), server ).isEmpty() );
+    QVERIFY( httpPasteUrl( QByteArray( "/p/./abc" ), server ).isEmpty() );
 }
 
 void

@@ -238,8 +238,8 @@ PackageModel::setData( const QModelIndex& index, const QVariant& value, int role
         const auto dotfilesCount = [](auto&& packageNames) {
             using namespace std::string_view_literals;
             static constexpr std::array kDotfilePackages{"cachyos-gnome-settings"sv, "cachyos-hyprland-settings"sv, "cachyos-i3wm-settings"sv, "cachyos-kde-settings"sv,
-                                                         "cachyos-niri-noctalia"sv, "cachyos-openbox-settings"sv, "cachyos-qtile-settings"sv, "cachyos-wayfire-settings"sv,
-                                                         "cachyos-xfce-settings"sv};
+                                                         "cachyos-mangowc-dms"sv, "cachyos-niri-noctalia"sv, "cachyos-openbox-settings"sv, "cachyos-qtile-settings"sv,
+                                                         "cachyos-wayfire-settings"sv, "cachyos-xfce-settings"sv};
 
             size_t dotfilesCount{};
             for ( auto&& packageName : packageNames ) {

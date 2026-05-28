@@ -570,6 +570,127 @@ def install_systemd_boot(efi_directory):
     create_loader(loader_path, installation_root_path)
 
 
+def write_kernel_cmdline(installation_root_path, uuid):
+    """
+    Writes /etc/kernel/cmdline with kernel parameters for the target system.
+    """
+    kernel_params = " ".join(get_kernel_params(uuid))
+    kernel_cmdline_path = os.path.join(installation_root_path, "etc", "kernel")
+    os.makedirs(kernel_cmdline_path, exist_ok=True)
+    with open(os.path.join(kernel_cmdline_path, "cmdline"), "w") as cmdline_file:
+        cmdline_file.write(kernel_params)
+
+
+def configure_uki_presets(installation_root_path, efi_directory):
+    """
+    Rewrites mkinitcpio presets to emit UKIs into the ESP instead of plain images.
+    """
+    uki_output_dir = libcalamares.job.configuration.get("ukiOutputDir", "/EFI/Linux")
+    uki_name_prefix = libcalamares.job.configuration.get("ukiNamePrefix", "cachyos-")
+
+    install_efi_directory = installation_root_path + efi_directory
+    uki_dir = os.path.join(install_efi_directory, uki_output_dir.lstrip("/"))
+    os.makedirs(uki_dir, exist_ok=True)
+
+    preset_dir = os.path.join(installation_root_path, "etc", "mkinitcpio.d")
+    if not os.path.isdir(preset_dir):
+        libcalamares.utils.warning("No mkinitcpio preset directory found at {!s}".format(preset_dir))
+        return
+
+    uki_subpath = uki_output_dir.rstrip("/")
+    if not uki_subpath.startswith("/"):
+        uki_subpath = "/" + uki_subpath
+
+    for preset_name in os.listdir(preset_dir):
+        if not preset_name.endswith(".preset"):
+            continue
+
+        pkgbase = preset_name[: -len(".preset")]
+        preset_path = os.path.join(preset_dir, preset_name)
+        default_uki_path = "{!s}{!s}/{!s}{!s}.efi".format(
+            efi_directory, uki_subpath, uki_name_prefix, pkgbase)
+        fallback_uki_path = "{!s}{!s}/{!s}{!s}-fallback.efi".format(
+            efi_directory, uki_subpath, uki_name_prefix, pkgbase)
+
+        with open(preset_path, "r") as preset_file:
+            lines = preset_file.readlines()
+
+        new_lines = []
+        has_default_uki = False
+        has_fallback_uki = False
+
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith("default_image="):
+                if not line.lstrip().startswith("#"):
+                    new_lines.append("#" + line)
+                else:
+                    new_lines.append(line)
+                continue
+            if stripped.startswith("fallback_image="):
+                if not line.lstrip().startswith("#"):
+                    new_lines.append("#" + line)
+                else:
+                    new_lines.append(line)
+                continue
+            if stripped.startswith("default_uki="):
+                has_default_uki = True
+                new_lines.append('default_uki="{!s}"\n'.format(default_uki_path))
+                continue
+            if stripped.startswith("fallback_uki="):
+                has_fallback_uki = True
+                new_lines.append('fallback_uki="{!s}"\n'.format(fallback_uki_path))
+                continue
+            new_lines.append(line)
+
+        if not has_default_uki:
+            new_lines.append('default_uki="{!s}"\n'.format(default_uki_path))
+        if not has_fallback_uki:
+            new_lines.append('fallback_uki="{!s}"\n'.format(fallback_uki_path))
+
+        with open(preset_path, "w") as preset_file:
+            preset_file.writelines(new_lines)
+
+        libcalamares.utils.debug(
+            "Configured UKI presets for {!s}: default={!s}, fallback={!s}".format(
+                pkgbase, default_uki_path, fallback_uki_path))
+
+
+def sign_uki_if_enabled(installation_root_path, efi_directory):
+    """
+    Secure Boot signing hook for UKIs (deferred implementation).
+    """
+    if not libcalamares.job.configuration.get("signUki", False):
+        return
+
+    # TODO(secure-boot): sign UKIs under EFI/Linux with sbctl or sbsign
+    libcalamares.utils.warning(
+        "signUki is enabled but Secure Boot signing is not implemented yet")
+
+
+def install_systemd_boot_uki(efi_directory):
+    """
+    Installs systemd-boot with Unified Kernel Images for EFI setups.
+    """
+    libcalamares.utils.debug("Bootloader: systemd-boot (UKI)")
+    installation_root_path = libcalamares.globalstorage.value("rootMountPoint")
+    install_efi_directory = installation_root_path + efi_directory
+    uuid = get_uuid()
+    loader_path = os.path.join(install_efi_directory,
+                               "loader",
+                               "loader.conf")
+
+    subprocess.check_call(["bootctl",
+                     "--path={!s}".format(install_efi_directory),
+                     "install"], stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+
+    write_kernel_cmdline(installation_root_path, uuid)
+    configure_uki_presets(installation_root_path, efi_directory)
+    libcalamares.utils.target_env_process_output(["mkinitcpio", "-P"])
+    sign_uki_if_enabled(installation_root_path, efi_directory)
+    create_loader(loader_path, installation_root_path)
+
+
 def get_grub_efi_parameters():
     """
     Returns a 3-tuple of suitable parameters for GRUB EFI installation,
@@ -1094,6 +1215,8 @@ def prepare_bootloader(fw_type, install_hybrid_grub):
         install_clr_boot_manager()
     elif efi_boot_loader == "systemd-boot" and fw_type == "efi":
         install_systemd_boot(efi_directory)
+    elif efi_boot_loader == "systemd-boot-uki" and fw_type == "efi":
+        install_systemd_boot_uki(efi_directory)
     elif efi_boot_loader == "sb-shim" and fw_type == "efi":
         install_secureboot(efi_directory)
     elif (efi_boot_loader == "refind" or efi_boot_loader == "refind-ai") and fw_type == "efi":

@@ -114,6 +114,9 @@ def run():
         base_packages += ["refind"]
     elif bootloader == "systemd-boot":
         base_packages += ["systemd-boot-manager"]
+    elif bootloader == "systemd-boot-uki":
+        # UKI uses mkinitcpio presets + bootctl; systemd-boot-manager is not needed.
+        pass
 
     # Detect CPU vendor and add the correct microcode package
     try:

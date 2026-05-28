@@ -27,3 +27,7 @@ properties:
     installHybridGRUB: { type: boolean }
 
     limineSplashLogo: { type: string }
+
+    ukiOutputDir: { type: string }
+    ukiNamePrefix: { type: string }
+    signUki: { type: boolean }

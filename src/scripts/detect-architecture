@@ -8,14 +8,16 @@ is_zen45() {
     local family="$(grep -Po 'cpu family\s+:\s+\K([0-9]+)' /proc/cpuinfo | head -n1)"
     local model="$(grep -Po 'model\s+:\s+\K([0-9]+)' /proc/cpuinfo | head -n1)"
 
+    if ! grep -q -w "avx512f" /proc/cpuinfo; then
+        return 1
+    fi
+
     case "$family" in
         $((0x19))) # Zen 4
             if ((model <= 0x0f)); then
                 return 1
             elif ((model >= 0x10 && model <= 0x1f)) ||
                 ((model >= 0x60 && model <= 0xaf)); then
-                return 0
-            elif grep -q -w "avx512f" /proc/cpuinfo; then
                 return 0
             fi
             ;;

@@ -236,6 +236,7 @@
     - powerdevil
     - plasma-login-manager
     - spectacle
+    - tesseract-data-eng
     - xsettingsd
 - name: "GNOME-Desktop"
   description: "GNOME desktop environment - designed to put you in control and get things done."

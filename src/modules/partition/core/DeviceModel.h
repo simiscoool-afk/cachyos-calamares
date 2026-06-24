@@ -13,6 +13,9 @@
 #include <QAbstractListModel>
 #include <QList>
 #include <QScopedPointer>
+#include <QVector>
+
+#include "core/OsproberEntry.h"
 
 class Device;
 class PartitionModel;
@@ -34,6 +37,7 @@ public:
      * devices.
      */
     void init( const DeviceList& devices );
+    void setOsproberEntries( const OsproberEntryList& entries );
 
     int rowCount( const QModelIndex& parent = QModelIndex() ) const override;
     QVariant data( const QModelIndex& index, int role = Qt::DisplayRole ) const override;
@@ -47,7 +51,12 @@ public:
     void removeDevice( Device* device );
 
 private:
+    QString makeStatusLabel( bool hasExistingPartitions, int osCount, const QString& osPrettyName ) const;
+    void updateDeviceStatuses();
+
     DeviceList m_devices;
+    OsproberEntryList m_osproberEntries;
+    QVector< QString > m_statusLabels;
 };
 
 #endif /* DEVICEMODEL_H */

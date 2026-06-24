@@ -131,7 +131,6 @@ private:
     void updateActionChoicePreview( Config::InstallChoice choice );
     bool shouldShowEncryptWidget( Config::InstallChoice choice ) const;
     void setupActions();
-    OsproberEntryList getOsproberEntriesForDevice( Device* device ) const;
     void doAlongsideApply();
     void setupEfiSystemPartitionSelector();
 

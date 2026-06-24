@@ -1353,7 +1353,8 @@ ChoicePage::setupActions()
     Logger::Once o;
 
     Device* currentDevice = selectedDevice();
-    OsproberEntryList osproberEntriesForCurrentDevice = getOsproberEntriesForDevice( currentDevice );
+    OsproberEntryList osproberEntriesForCurrentDevice
+        = Calamares::Partition::osproberEntriesForDevice( m_core->osproberEntries(), currentDevice );
 
     cDebug() << o << "Setting up actions for" << currentDevice->deviceNode() << "with"
              << osproberEntriesForCurrentDevice.count() << "entries.";
@@ -1527,20 +1528,6 @@ ChoicePage::setupActions()
                    << "replaced?" << atLeastOneCanBeReplaced << "resized?" << atLeastOneCanBeResized
                    << "erased? (not-mounted and not-raid)" << !atLeastOneIsMounted << "and" << !isInactiveRAID;
     }
-}
-
-OsproberEntryList
-ChoicePage::getOsproberEntriesForDevice( Device* device ) const
-{
-    OsproberEntryList eList;
-    for ( const OsproberEntry& entry : m_core->osproberEntries() )
-    {
-        if ( entry.path.startsWith( device->deviceNode() ) )
-        {
-            eList.append( entry );
-        }
-    }
-    return eList;
 }
 
 bool

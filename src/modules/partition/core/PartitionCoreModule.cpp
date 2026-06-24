@@ -294,6 +294,7 @@ PartitionCoreModule::doInit()
     // The following PartUtils::runOsprober call in turn calls PartUtils::canBeResized,
     // which relies on a working DeviceModel.
     m_osproberLines = PartUtils::runOsprober( this->deviceModel() );
+    m_deviceModel->setOsproberEntries( m_osproberLines );
 
     // We perform a best effort of filling out filesystem UUIDs in m_osproberLines
     // because we will need them later on in PartitionModel if partition paths

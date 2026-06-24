@@ -11,6 +11,9 @@
 
 #include "OsproberEntry.h"
 
+#include <kpmcore/core/device.h>
+
+#include <QtGlobal>
 
 bool
 FstabEntry::isValid() const
@@ -61,3 +64,45 @@ fromEtcFstabContents( const QStringList& fstabLines )
 }
 
 }  // namespace Calamares
+
+namespace Calamares::Partition
+{
+static bool
+isPartitionPathOnDevice( const QString& partitionPath, const QString& deviceNode )
+{
+    if ( partitionPath.isEmpty() || deviceNode.isEmpty() || !partitionPath.startsWith( deviceNode ) )
+    {
+        return false;
+    }
+
+    if ( partitionPath.length() == deviceNode.length() )
+    {
+        return true;
+    }
+
+    const auto next = partitionPath.at( deviceNode.length() );
+    return next.isDigit() || next == QLatin1Char( 'p' );
+}
+
+bool
+isOsproberEntryForDevice( const OsproberEntry& entry, Device* device )
+{
+    Q_ASSERT( device );
+    return isPartitionPathOnDevice( entry.path, device->deviceNode() );
+}
+
+OsproberEntryList
+osproberEntriesForDevice( const OsproberEntryList& entries, Device* device )
+{
+    OsproberEntryList deviceEntries;
+    for ( const auto& entry : entries )
+    {
+        if ( isOsproberEntryForDevice( entry, device ) )
+        {
+            deviceEntries.append( entry );
+        }
+    }
+    return deviceEntries;
+}
+
+}  // namespace Calamares::Partition

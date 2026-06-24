@@ -13,6 +13,8 @@
 
 #include <QStringList>
 
+class Device;
+
 struct FstabEntry
 {
     QString partitionNode;
@@ -63,5 +65,11 @@ struct OsproberEntry
 };
 
 typedef QList< OsproberEntry > OsproberEntryList;
+
+namespace Calamares::Partition
+{
+bool isOsproberEntryForDevice( const OsproberEntry& entry, Device* device );
+OsproberEntryList osproberEntriesForDevice( const OsproberEntryList& entries, Device* device );
+}  // namespace Calamares::Partition
 
 #endif  // OSPROBERENTRY_H

@@ -314,6 +314,7 @@
     - cosmic-launcher
     - cosmic-notifications
     - cosmic-osd
+    - cosmic-monitor
     - cosmic-panel
     - cosmic-player
     - cosmic-randr

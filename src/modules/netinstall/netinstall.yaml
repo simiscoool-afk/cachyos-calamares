@@ -248,7 +248,6 @@
     - plasma-pa
     - plasma-systemmonitor
     - plasma-thunderbolt
-    - plymouth-kcm
     - powerdevil
     - plasma-login-manager
     - spectacle
@@ -363,6 +362,7 @@
     - xdg-desktop-portal-gtk
     - gnome-keyring
     - xorg-xwayland
+    - gvfs-mtp
 - name: "Niri"
   description: "A scrollable-tiling Wayland compositor."
   description[de]: "Ein Wayland-Kompositor mit scrollbarem Tiling."
@@ -880,3 +880,12 @@
     - espeak-ng
     - mousetweaks
     - orca
+- name: "Plymouth"
+  description: "Splash screen on boot"
+  hidden: false
+  selected: true
+  critical: true
+  packages:
+    - plymouth
+    - cachyos-plymouth-bootanimation
+    - cachyos-plymouth-theme
